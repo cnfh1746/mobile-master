@@ -1,12 +1,9 @@
 {
-    "display_name": "外置手机2.2",
+    "display_name": "手机UI (国内最新版)",
     "loading_order": 100,
-    "requires": [],
-    "optional": [],
     "js": "index.js",
     "css": "styles/main.css",
-    "author": "沉淀/夜宵宵夜",
-    "version": "2.2",
-    "homePage": "https://gitee.com/chendian123455/mobile.git",
-    "description": "sillytavern外置手机"
+    "author": "沉淀 (modified by CNFH1746)",
+    "version": "2.3.0",
+    "description": "作者最新维护的移动端UI插件，由您个性化修改。"
 }

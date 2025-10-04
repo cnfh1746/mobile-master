@@ -1,0 +1,12 @@
+{
+    "display_name": "外置手机2.2",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "styles/main.css",
+    "author": "沉淀/夜宵宵夜",
+    "version": "2.2",
+    "homePage": "https://gitee.com/chendian123455/mobile.git",
+    "description": "sillytavern外置手机"
+}

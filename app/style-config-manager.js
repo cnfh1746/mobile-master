@@ -78,7 +78,6 @@ if (typeof window.StyleConfigManager === 'undefined') {
       this.configLoaded = false;
       this.styleElement = null;
       this.isReady = false;
-      this.defaultConfigName = null; // 新增：用于跟踪默认配置文件名
 
       console.log('[Style Config Manager] 样式配置管理器初始化开始');
 
@@ -242,27 +241,8 @@ if (typeof window.StyleConfigManager === 'undefined') {
     // 从Data Bank加载配置
     async loadConfig() {
       try {
-        console.log('[Style Config Manager] 🔄 加载样式配置...');
+        console.log('[Style Config Manager] 🔄 从Data Bank加载样式配置...');
 
-        // 步骤1: 尝试加载用户设置的默认配置
-        const userDefaultConfigName = localStorage.getItem('mobile_style_default_config_name');
-        if (userDefaultConfigName) {
-          this.defaultConfigName = userDefaultConfigName;
-          console.log(`[Style Config Manager] 发现用户设置的默认配置: ${userDefaultConfigName}`);
-          const loaded = await this.loadConfigFromFile(userDefaultConfigName);
-          if (loaded) {
-            console.log(`[Style Config Manager] ✅ 成功加载用户默认配置: ${userDefaultConfigName}`);
-            this.configLoaded = true;
-            return; // 加载成功，直接返回
-          } else {
-            console.warn(`[Style Config Manager] ⚠️ 加载用户默认配置 ${userDefaultConfigName} 失败，将尝试加载系统默认配置。`);
-            localStorage.removeItem('mobile_style_default_config_name'); // 无效的配置，移除它
-            this.defaultConfigName = null;
-          }
-        }
-
-        // 步骤2: 如果没有用户默认或加载失败，则加载系统默认配置
-        console.log('[Style Config Manager] 🔄 从Data Bank加载系统默认样式配置...');
         if (sillyTavernCoreImported && getDataBankAttachmentsForSource && getFileAttachment) {
           // 使用SillyTavern原生API
           const result = await this.loadConfigFromDataBank();
@@ -272,7 +252,7 @@ if (typeof window.StyleConfigManager === 'undefined') {
           }
         }
 
-        // 步骤3: 备用方案：从localStorage加载
+        // 备用方案：从localStorage加载
         await this.loadConfigFromLocalStorage();
         this.configLoaded = true;
       } catch (error) {
@@ -998,14 +978,6 @@ ${
         const storageKey = `sillytavern_mobile_${fileName}`;
         localStorage.removeItem(storageKey);
         console.log('[Style Config Manager] ✅ 已从localStorage删除配置:', fileName);
-
-        // 新增：如果删除的是默认配置，则清除默认设置
-        if (this.defaultConfigName === fileName) {
-            localStorage.removeItem('mobile_style_default_config_name');
-            this.defaultConfigName = null;
-            console.log('[Style Config Manager] ℹ️ 已清除默认配置设置，将恢复加载系统默认。');
-        }
-
         return true;
       } catch (error) {
         console.error('[Style Config Manager] 删除配置失败:', error);
@@ -1031,33 +1003,33 @@ ${
           .map(config => {
             // 处理显示名称
             let displayName;
-            // 新增：检查此配置是否为用户设置的默认配置
-            const isUserDefault = config.name === this.defaultConfigName;
-            const isSystemDefaultFile = config.name === STYLE_CONFIG_FILE_NAME;
+            const isDefault = config.name === STYLE_CONFIG_FILE_NAME;
 
-            if (isSystemDefaultFile) {
-              displayName = '系统默认';
+            if (isDefault) {
+              displayName = '默认配置';
+            } else if (config.name.startsWith('mobile_config_') && config.name.includes('_mobile_style_config.json')) {
+              // 处理带时间戳的默认配置文件：mobile_config_timestamp_mobile_style_config.json
+              const match = config.name.match(/mobile_config_(\d+)_mobile_style_config\.json/);
+              if (match) {
+                const timestamp = match[1];
+                const date = new Date(parseInt(timestamp));
+                displayName = `默认配置 (${date.toLocaleString()})`;
+              } else {
+                displayName = config.name.replace('_style_config.json', '');
+              }
             } else {
+              // 处理普通的用户配置文件
               displayName = config.name.replace('_style_config.json', '');
             }
 
             const createTime = config.created ? new Date(config.created).toLocaleString() : '未知';
 
-            // 如果一个配置既是用户默认，又是系统默认文件，优先显示用户默认
-            let badge = '';
-            if (isUserDefault) {
-              badge = '<span class="default-badge">默认</span>';
-            } else if (isSystemDefaultFile) {
-              // 如果没有用户默认，则将系统默认文件标记为默认
-              badge = !this.defaultConfigName ? '<span class="default-badge">默认</span>' : '';
-            }
-
             return `
-                    <div class="config-item ${isUserDefault ? 'is-default' : ''}" data-config-file="${config.name}">
+                    <div class="config-item" data-config-file="${config.name}">
                         <div class="config-info">
                             <div class="config-name">
-                                ${isUserDefault ? '🏠' : '📄'} ${displayName}
-                                ${badge}
+                                ${isDefault ? '🏠' : '📄'} ${displayName}
+                                ${isDefault ? '<span class="default-badge">默认</span>' : ''}
                             </div>
                             <div class="config-meta">
                                 <small>创建时间: ${createTime}</small>
@@ -1781,10 +1753,6 @@ ${
                 .config-item:hover {
                     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                     transform: translateY(-1px);
-                }
-                .config-item.is-default {
-                    border-color: #3182ce;
-                    background-color: #ebf8ff;
                 }
 
                 .config-name {
@@ -3759,19 +3727,28 @@ ${
           if (loadChoice === 'setDefault') {
             this.updateStatus('正在设为默认配置...', 'loading');
 
-            // 新增：将此配置文件名保存为默认
-            localStorage.setItem('mobile_style_default_config_name', fileName);
-            this.defaultConfigName = fileName;
-            console.log(`[Style Config Manager] 📌 已将 ${fileName} 设为新的用户默认配置。`);
+            console.log('[Style Config Manager] 🔄 开始保存为默认配置');
+            console.log('[Style Config Manager] 当前配置内容:', JSON.stringify(this.currentConfig, null, 2));
 
-            // 同时，为了兼容性和稳定性，仍然将当前配置内容保存到标准的默认文件中
+            // 保存为默认配置
             const saveSuccess = await this.saveConfig();
 
+            console.log('[Style Config Manager] 保存结果:', saveSuccess);
+
             if (saveSuccess) {
-              this.updateStatus('配置已加载并设为默认！刷新页面后将自动加载此配置。', 'success');
+              this.updateStatus('配置已加载并设为默认配置！刷新页面后依然有效', 'success');
               console.log('[Style Config Manager] ✅ 配置已加载并保存为默认配置');
-              // 刷新列表以显示新的“默认”徽章
-              await this.handleRefreshConfigList();
+
+              // 验证保存是否成功
+              console.log('[Style Config Manager] 🔍 验证保存结果...');
+              if (sillyTavernCoreImported && getDataBankAttachmentsForSource) {
+                const globalAttachments = getDataBankAttachmentsForSource('global', true);
+                const defaultConfig = globalAttachments.find(att => att.name === 'mobile_style_config.json');
+                console.log('[Style Config Manager] 默认配置文件存在:', !!defaultConfig);
+                if (defaultConfig) {
+                  console.log('[Style Config Manager] 默认配置文件信息:', defaultConfig);
+                }
+              }
             } else {
               this.updateStatus('配置加载成功，但设为默认配置失败', 'error');
               console.error('[Style Config Manager] ❌ 保存为默认配置失败');

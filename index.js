@@ -5,30 +5,27 @@
 // @author       Assistant
 // @license      MIT
 
-const extensionName = "mobile";
-const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
-
 // 优化：首先加载性能配置和优化加载器
 const performanceScript = document.createElement('script');
-performanceScript.src = `/${extensionFolderPath}/performance-config.js`;
+performanceScript.src = './scripts/extensions/third-party/mobile/performance-config.js';
 performanceScript.onload = () => {
   console.log('[Mobile Context] 性能配置加载完成');
 
   // 加载优化加载器
   const optimizedLoaderScript = document.createElement('script');
-  optimizedLoaderScript.src = `/${extensionFolderPath}/optimized-loader.js`;
+  optimizedLoaderScript.src = './scripts/extensions/third-party/mobile/optimized-loader.js';
   optimizedLoaderScript.onload = () => {
     console.log('[Mobile Context] 优化加载器加载完成');
 
     // 加载性能测试器
     const performanceTestScript = document.createElement('script');
-    performanceTestScript.src = `/${extensionFolderPath}/performance-test.js`;
+    performanceTestScript.src = './scripts/extensions/third-party/mobile/performance-test.js';
     performanceTestScript.onload = () => {
       console.log('[Mobile Context] 性能测试器加载完成');
 
       // 加载诊断工具
       const diagnosticScript = document.createElement('script');
-      diagnosticScript.src = `/${extensionFolderPath}/diagnostic-tool.js`;
+      diagnosticScript.src = './scripts/extensions/third-party/mobile/diagnostic-tool.js';
       diagnosticScript.onload = () => {
         console.log('[Mobile Context] 诊断工具加载完成');
         // 开始优化加载流程
@@ -58,19 +55,19 @@ async function initOptimizedLoading() {
     // 定义核心模块（高优先级）
     const coreModules = [
       {
-        src: `/${extensionFolderPath}/context-monitor.js`,
+        src: './scripts/extensions/third-party/mobile/context-monitor.js',
         name: 'context-monitor',
         priority: 'high',
         required: true,
       },
       {
-        src: `/${extensionFolderPath}/mobile-upload.js`,
+        src: './scripts/extensions/third-party/mobile/mobile-upload.js',
         name: 'mobile-upload',
         priority: 'high',
         required: true,
       },
       {
-        src: `/${extensionFolderPath}/mobile-phone.js`,
+        src: './scripts/extensions/third-party/mobile/mobile-phone.js',
         name: 'mobile-phone',
         priority: 'high',
         required: true,
@@ -80,43 +77,43 @@ async function initOptimizedLoading() {
     // 定义扩展模块（中优先级）
     const extensionModules = [
       {
-        src: `/${extensionFolderPath}/context-editor.js`,
+        src: './scripts/extensions/third-party/mobile/context-editor.js',
         name: 'context-editor',
         priority: 'medium',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/custom-api-config.js`,
+        src: './scripts/extensions/third-party/mobile/custom-api-config.js',
         name: 'custom-api-config',
         priority: 'medium',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/mesid-floor-monitor.js`,
+        src: './scripts/extensions/third-party/mobile/mesid-floor-monitor.js',
         name: 'mesid-floor-monitor',
         priority: 'medium',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/app/weibo-app/weibo-manager.js`,
+        src: './scripts/extensions/third-party/mobile/app/weibo-app/weibo-manager.js',
         name: 'weibo-manager',
         priority: 'medium',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/app/forum-app/forum-manager.js`,
+        src: './scripts/extensions/third-party/mobile/app/forum-app/forum-manager.js',
         name: 'forum-manager',
         priority: 'medium',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/app/weibo-app/weibo-auto-listener.js`,
+        src: './scripts/extensions/third-party/mobile/app/weibo-app/weibo-auto-listener.js',
         name: 'weibo-auto-listener',
         priority: 'low',
         required: false,
       },
       {
-        src: `/${extensionFolderPath}/app/forum-app/forum-auto-listener.js`,
+        src: './scripts/extensions/third-party/mobile/app/forum-app/forum-auto-listener.js',
         name: 'forum-auto-listener',
         priority: 'low',
         required: false,
@@ -147,7 +144,7 @@ function fallbackToTraditionalLoading() {
 
   // 引入上下文监控器
   const contextScript = document.createElement('script');
-  contextScript.src = `/${extensionFolderPath}/context-monitor.js`;
+  contextScript.src = './scripts/extensions/third-party/mobile/context-monitor.js';
   contextScript.onload = () => {
     console.log('[Mobile Context] 上下文监控器加载完成');
   };
@@ -155,7 +152,7 @@ function fallbackToTraditionalLoading() {
 
   // 加载移动端上传管理器
   const uploadScript = document.createElement('script');
-  uploadScript.src = `/${extensionFolderPath}/mobile-upload.js`;
+  uploadScript.src = './scripts/extensions/third-party/mobile/mobile-upload.js';
   uploadScript.onload = () => {
     console.log('[Mobile Context] 移动端上传管理器加载完成');
     // 检查上传管理器是否创建成功
@@ -174,13 +171,13 @@ function fallbackToTraditionalLoading() {
 
   // 加载性能测试器（传统方式）
   const performanceTestScript = document.createElement('script');
-  performanceTestScript.src = `/${extensionFolderPath}/performance-test.js`;
+  performanceTestScript.src = './scripts/extensions/third-party/mobile/performance-test.js';
   performanceTestScript.onload = () => {
     console.log('[Mobile Context] 性能测试器加载完成（传统方式）');
 
     // 加载诊断工具（传统方式）
     const diagnosticScript = document.createElement('script');
-    diagnosticScript.src = `/${extensionFolderPath}/diagnostic-tool.js`;
+    diagnosticScript.src = './scripts/extensions/third-party/mobile/diagnostic-tool.js';
     diagnosticScript.onload = () => {
       console.log('[Mobile Context] 诊断工具加载完成（传统方式）');
     };
@@ -197,7 +194,7 @@ function fallbackToTraditionalLoading() {
 
 // 加载移动端上下文编辑器
 const contextEditorScript = document.createElement('script');
-contextEditorScript.src = `/${extensionFolderPath}/context-editor.js`;
+contextEditorScript.src = './scripts/extensions/third-party/mobile/context-editor.js';
 contextEditorScript.onload = () => {
   console.log('[Mobile Context] 移动端上下文编辑器加载完成');
   // 检查上下文编辑器是否创建成功
@@ -216,7 +213,7 @@ document.head.appendChild(contextEditorScript);
 
 // 加载自定义API配置模块
 const customAPIScript = document.createElement('script');
-customAPIScript.src = `/${extensionFolderPath}/custom-api-config.js`;
+customAPIScript.src = './scripts/extensions/third-party/mobile/custom-api-config.js';
 customAPIScript.onload = () => {
   console.log('[Mobile Context] 自定义API配置模块加载完成');
   // 检查API配置模块是否创建成功
@@ -235,7 +232,7 @@ document.head.appendChild(customAPIScript);
 
 // 加载MesID楼层监听器模块
 const mesidFloorScript = document.createElement('script');
-mesidFloorScript.src = `/${extensionFolderPath}/mesid-floor-monitor.js`;
+mesidFloorScript.src = './scripts/extensions/third-party/mobile/mesid-floor-monitor.js';
 mesidFloorScript.onload = () => {
   console.log('[Mobile Context] MesID楼层监听器模块加载完成');
   // 检查楼层监听器是否创建成功
@@ -255,7 +252,7 @@ document.head.appendChild(mesidFloorScript);
 // 加载微博功能模块
 // 1. 加载微博管理器
 const weiboManagerScript = document.createElement('script');
-weiboManagerScript.src = `/${extensionFolderPath}/app/weibo-app/weibo-manager.js`;
+weiboManagerScript.src = './scripts/extensions/third-party/mobile/app/weibo-app/weibo-manager.js';
 weiboManagerScript.onload = () => {
   console.log('[Mobile Context] 微博管理器加载完成');
   // 检查微博管理器是否创建成功
@@ -274,7 +271,7 @@ document.head.appendChild(weiboManagerScript);
 
 // 2. 加载微博自动监听器
 const weiboAutoListenerScript = document.createElement('script');
-weiboAutoListenerScript.src = `/${extensionFolderPath}/app/weibo-app/weibo-auto-listener.js`;
+weiboAutoListenerScript.src = './scripts/extensions/third-party/mobile/app/weibo-app/weibo-auto-listener.js';
 weiboAutoListenerScript.onload = () => {
   console.log('[Mobile Context] 微博自动监听器加载完成');
   // 检查微博自动监听器是否创建成功
@@ -294,7 +291,7 @@ document.head.appendChild(weiboAutoListenerScript);
 // 加载论坛功能模块
 // 1. 先加载论坛管理器
 const forumManagerScript = document.createElement('script');
-forumManagerScript.src = `/${extensionFolderPath}/app/forum-app/forum-manager.js`;
+forumManagerScript.src = './scripts/extensions/third-party/mobile/app/forum-app/forum-manager.js';
 forumManagerScript.onload = () => {
   console.log('[Mobile Context] 论坛管理器加载完成');
   // 检查论坛管理器是否创建成功
@@ -313,7 +310,7 @@ document.head.appendChild(forumManagerScript);
 
 // 2. 加载论坛风格定义
 const forumStylesScript = document.createElement('script');
-forumStylesScript.src = `/${extensionFolderPath}/app/forum-app/forum-styles.js`;
+forumStylesScript.src = './scripts/extensions/third-party/mobile/app/forum-app/forum-styles.js';
 forumStylesScript.onload = () => {
   console.log('[Mobile Context] 论坛风格模块加载完成');
   // 检查论坛风格是否创建成功
@@ -332,7 +329,7 @@ document.head.appendChild(forumStylesScript);
 
 // 3. 加载论坛自动监听器
 const forumAutoListenerScript = document.createElement('script');
-forumAutoListenerScript.src = `/${extensionFolderPath}/app/forum-app/forum-auto-listener.js`;
+forumAutoListenerScript.src = './scripts/extensions/third-party/mobile/app/forum-app/forum-auto-listener.js';
 forumAutoListenerScript.onload = () => {
   console.log('[Mobile Context] 论坛自动监听器加载完成');
   // 检查论坛自动监听器是否创建成功
@@ -353,7 +350,7 @@ document.head.appendChild(forumAutoListenerScript);
 const phoneStyle = document.createElement('link');
 phoneStyle.rel = 'stylesheet';
 phoneStyle.type = 'text/css';
-phoneStyle.href = `/${extensionFolderPath}/mobile-phone.css`;
+phoneStyle.href = './scripts/extensions/third-party/mobile/mobile-phone.css';
 phoneStyle.onload = () => {
   console.log('[Mobile Context] 手机界面样式加载完成');
 };
@@ -366,7 +363,7 @@ document.head.appendChild(phoneStyle);
 const imageConfigStyle = document.createElement('link');
 imageConfigStyle.rel = 'stylesheet';
 imageConfigStyle.type = 'text/css';
-imageConfigStyle.href = `/${extensionFolderPath}/app/image-config-modal.css`;
+imageConfigStyle.href = './scripts/extensions/third-party/mobile/app/image-config-modal.css';
 imageConfigStyle.onload = () => {
   console.log('[Mobile Context] 图片配置弹窗样式加载完成');
 };
@@ -377,7 +374,7 @@ document.head.appendChild(imageConfigStyle);
 
 // 加载手机界面脚本（在样式之后）
 const phoneScript = document.createElement('script');
-phoneScript.src = `/${extensionFolderPath}/mobile-phone.js`;
+phoneScript.src = './scripts/extensions/third-party/mobile/mobile-phone.js';
 phoneScript.onload = () => {
   console.log('[Mobile Context] 手机界面脚本加载完成');
   // 检查按钮是否创建成功
@@ -401,7 +398,7 @@ document.head.appendChild(phoneScript);
 
 // 加载语音消息处理器脚本
 const voiceMessageScript = document.createElement('script');
-voiceMessageScript.src = `/${extensionFolderPath}/app/voice-message-handler.js`;
+voiceMessageScript.src = './scripts/extensions/third-party/mobile/app/voice-message-handler.js';
 voiceMessageScript.onload = () => {
   console.log('[Mobile Context] 语音消息处理器加载完成');
   // 检查语音消息处理器是否创建成功
@@ -420,7 +417,7 @@ document.head.appendChild(voiceMessageScript);
 
 // 加载图片配置弹窗脚本
 const imageConfigScript = document.createElement('script');
-imageConfigScript.src = `/${extensionFolderPath}/app/image-config-modal.js`;
+imageConfigScript.src = './scripts/extensions/third-party/mobile/app/image-config-modal.js';
 imageConfigScript.onload = () => {
   console.log('[Mobile Context] 图片配置弹窗加载完成');
   // 检查图片配置弹窗是否创建成功

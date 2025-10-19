@@ -1678,10 +1678,15 @@ class MobileCustomAPIConfig {
                 });
             }
 
+            // 统一参数映射：max_tokens 或 maxTokens 都映射到 maxOutputTokens
+            // Gemini 限制：1-65536（不包含65537），安全值设为 8000
+            const requestedTokens = options.max_tokens || options.maxTokens || settings.maxTokens || 8000;
+            const maxOutputTokens = Math.min(requestedTokens, 8000);
+
             return {
                 contents: contents,
                 generationConfig: {
-                    maxOutputTokens: options.maxTokens || settings.maxTokens,
+                    maxOutputTokens: maxOutputTokens,
                     temperature: options.temperature || settings.temperature,
                     ...options.customParams
                 }

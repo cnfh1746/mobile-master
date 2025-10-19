@@ -1,6 +1,6 @@
 // ==Mobile Custom API Config==
 // @name         Mobile Custom API Configuration
-// @version      1.0.0
+// @version      1.1.0
 // @description  移动端自定义API配置管理器，支持多种API服务商
 // @author       cd
 // @license      MIT
@@ -49,7 +49,7 @@ class MobileCustomAPIConfig {
             streamEnabled: false,
             // 新增设置：自动重试截断的响应
             autoRetryTruncated: true,
-            truncationRetryMaxTokens: 80000 // 重试时使用的更大token限制
+            truncationRetryMaxTokens: 60000 // 重试时使用的更大token限制（不超过65536）
         };
     }
 
@@ -1303,7 +1303,7 @@ class MobileCustomAPIConfig {
                 // 构建请求选项，如果是重试且启用了自动重试截断，增加token限制
                 const requestOptions = { ...options };
                 if (retryCount > 0 && this.currentSettings.autoRetryTruncated) {
-                    requestOptions.max_tokens = this.currentSettings.truncationRetryMaxTokens || 80000;
+                    requestOptions.max_tokens = this.currentSettings.truncationRetryMaxTokens || 60000;
                     console.log(`[Mobile API Config] 🔄 第${retryCount}次重试，使用更大的token限制: ${requestOptions.max_tokens}`);
                 }
 

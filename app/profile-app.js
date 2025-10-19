@@ -719,7 +719,7 @@ class ProfileApp {
 
                 const apiOptions = {
                     temperature: 0.8,
-                    max_tokens: 60000,
+                    max_tokens: 80000,
                 };
 
                 console.log('[Profile App] API选项:', apiOptions);

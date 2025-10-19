@@ -1,6 +1,6 @@
 // ==Mobile Custom API Config==
 // @name         Mobile Custom API Configuration
-// @version      1.1.0
+// @version      1.0.0
 // @description  移动端自定义API配置管理器，支持多种API服务商
 // @author       cd
 // @license      MIT
@@ -49,7 +49,7 @@ class MobileCustomAPIConfig {
             streamEnabled: false,
             // 新增设置：自动重试截断的响应
             autoRetryTruncated: true,
-            truncationRetryMaxTokens: 60000 // 重试时使用的更大token限制（不超过65536）
+            truncationRetryMaxTokens: 80000 // 重试时使用的更大token限制
         };
     }
 
@@ -1303,7 +1303,7 @@ class MobileCustomAPIConfig {
                 // 构建请求选项，如果是重试且启用了自动重试截断，增加token限制
                 const requestOptions = { ...options };
                 if (retryCount > 0 && this.currentSettings.autoRetryTruncated) {
-                    requestOptions.max_tokens = this.currentSettings.truncationRetryMaxTokens || 60000;
+                    requestOptions.max_tokens = this.currentSettings.truncationRetryMaxTokens || 80000;
                     console.log(`[Mobile API Config] 🔄 第${retryCount}次重试，使用更大的token限制: ${requestOptions.max_tokens}`);
                 }
 
@@ -1678,15 +1678,10 @@ class MobileCustomAPIConfig {
                 });
             }
 
-            // 统一参数映射：max_tokens 或 maxTokens 都映射到 maxOutputTokens
-            // Gemini 限制：1-65536（不包含65537），安全值设为 8000
-            const requestedTokens = options.max_tokens || options.maxTokens || settings.maxTokens || 8000;
-            const maxOutputTokens = Math.min(requestedTokens, 8000);
-
             return {
                 contents: contents,
                 generationConfig: {
-                    maxOutputTokens: maxOutputTokens,
+                    maxOutputTokens: options.maxTokens || settings.maxTokens,
                     temperature: options.temperature || settings.temperature,
                     ...options.customParams
                 }

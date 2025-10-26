@@ -69,7 +69,6 @@ class MobileAPIIntegration {
             
             this.createUI();
             this.bindEvents();
-            this.registerConsoleCommands();
             
             this.isInitialized = true;
             console.log('[Mobile API Integration] ✅ 系统初始化完成');
@@ -199,10 +198,9 @@ class MobileAPIIntegration {
                     <div style="font-weight:500;margin-bottom:5px;color:#000;">API状态:</div>
                     <div id="api-status-text" style="font-size:14px;color:#666;">检查中...</div>
                 </div>
-                <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
-                    <button type="button" id="manual-generate-phone" style="flex:1;min-width:120px;padding:12px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:500;">立即生成</button>
-                    <button type="button" id="test-generation" style="flex:1;min-width:120px;padding:12px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:500;">测试API</button>
-                    <button type="button" id="save-integration-settings" style="flex:1;min-width:120px;padding:12px;background:#007bff;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:500;">保存设置</button>
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button type="button" id="test-generation" style="flex:1;padding:12px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:500;">测试生成</button>
+                    <button type="button" id="save-integration-settings" style="flex:1;padding:12px;background:#007bff;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:500;">保存设置</button>
                 </div>
             </div>
         `;
@@ -234,18 +232,10 @@ class MobileAPIIntegration {
             if (e.target.id === 'test-generation') {
                 this.testGeneration();
             }
-            if (e.target.id === 'manual-generate-phone') {
-                this.manualGenerate();
-            }
             if (e.target.id === 'mobile-api-integration-panel' && e.target === e.currentTarget) {
                 this.hideConfigPanel();
             }
         });
-        
-        // 如果启用了自动生成，启动监听
-        if (this.settings.enabled && this.settings.autoGenerate) {
-            this.startAutoDetection();
-        }
     }
 
     saveSettingsFromUI() {
@@ -272,270 +262,7 @@ class MobileAPIIntegration {
 
     async testGeneration() {
         console.log('[Mobile API Integration] 开始测试生成...');
-        
-        if (!this.apiConfig || !this.apiConfig.isConfigured()) {
-            alert('❌ 请先配置自定义API！');
-            return;
-        }
-        
-        try {
-            const testPrompt = this.promptTemplates.privateMessage.content;
-            const messages = [
-                { role: 'system', content: testPrompt },
-                { role: 'user', content: '请生成一条私聊消息示例' }
-            ];
-            
-            this.updateStatus('正在测试API调用...', 'info');
-            const response = await this.apiConfig.callAPI(messages, { temperature: 0.8, max_tokens: 500 });
-            
-            if (response && response.content) {
-                console.log('[Mobile API Integration] 测试成功，返回内容:', response.content);
-                alert('✅ API测试成功！\n\n生成内容:\n' + response.content);
-                this.updateStatus('API测试成功', 'success');
-            } else {
-                throw new Error('API返回格式错误');
-            }
-        } catch (error) {
-            console.error('[Mobile API Integration] 测试失败:', error);
-            alert('❌ API测试失败: ' + error.message);
-            this.updateStatus('API测试失败', 'error');
-        }
-    }
-    
-    /**
-     * 更新状态显示
-     */
-    updateStatus(message, type = 'info') {
-        const statusEl = document.getElementById('api-status-text');
-        if (statusEl) {
-            const colors = { info: '#666', success: '#28a745', warning: '#ffc107', error: '#dc3545' };
-            statusEl.innerHTML = message;
-            statusEl.style.color = colors[type] || colors.info;
-        }
-        console.log(`[Mobile API Integration] ${message}`);
-    }
-    
-    /**
-     * 生成手机内容（核心方法）
-     */
-    async generatePhoneContent(context, contentType = 'phoneGeneral') {
-        try {
-            console.log('[Mobile API Integration] 🚀 开始生成手机内容...');
-            
-            if (!this.apiConfig || !this.apiConfig.isConfigured()) {
-                throw new Error('API未配置');
-            }
-            
-            // 获取提示词模板
-            const template = this.promptTemplates[contentType];
-            if (!template) {
-                throw new Error(`未找到模板: ${contentType}`);
-            }
-            
-            // 构建API请求
-            const messages = [
-                { role: 'system', content: template.content },
-                { role: 'user', content: `请根据以下对话内容生成手机相关内容：\n\n${context}` }
-            ];
-            
-            console.log('[Mobile API Integration] 📤 发送API请求:', messages);
-            
-            // 调用API
-            const response = await this.apiConfig.callAPI(messages, {
-                temperature: 0.8,
-                max_tokens: 2000
-            });
-            
-            console.log('[Mobile API Integration] 📥 API返回:', response);
-            
-            if (response && response.content) {
-                console.log('[Mobile API Integration] ✅ 生成成功');
-                return response.content;
-            } else {
-                throw new Error('API返回格式错误');
-            }
-        } catch (error) {
-            console.error('[Mobile API Integration] ❌ 生成失败:', error);
-            throw error;
-        }
-    }
-    
-    /**
-     * 监听聊天消息（自动检测触发）
-     */
-    startAutoDetection() {
-        if (!this.settings.enabled || !this.settings.autoGenerate) {
-            return;
-        }
-        
-        console.log('[Mobile API Integration] 🎧 启动自动检测...');
-        
-        // 监听新消息事件
-        document.addEventListener('message_sent', async (e) => {
-            if (!this.settings.autoGenerate) return;
-            
-            try {
-                const message = e.detail;
-                await this.handleNewMessage(message);
-            } catch (error) {
-                console.error('[Mobile API Integration] 处理消息失败:', error);
-            }
-        });
-    }
-    
-    /**
-     * 处理新消息
-     */
-    async handleNewMessage(message) {
-        console.log('[Mobile API Integration] 📨 收到新消息:', message);
-        
-        // 检查是否包含触发关键词
-        const text = message.mes || '';
-        const hasKeyword = this.settings.triggerKeywords.some(kw => text.includes(kw));
-        
-        if (!hasKeyword) {
-            console.log('[Mobile API Integration] 未检测到触发关键词');
-            return;
-        }
-        
-        console.log('[Mobile API Integration] ✨ 检测到触发关键词，开始生成内容...');
-        
-        // 获取聊天上下文
-        const context = await this.getChatContext();
-        
-        // 生成内容
-        const generatedContent = await this.generatePhoneContent(context);
-        
-        // 解析并插入内容
-        const parsedContents = this.contentParser.parseContent(generatedContent);
-        if (parsedContents.length > 0) {
-            await this.inlineInserter.insertContent(message, parsedContents);
-        }
-    }
-    
-    /**
-     * 获取聊天上下文
-     */
-    async getChatContext() {
-        try {
-            if (window.mobileContextEditor) {
-                const chatData = window.mobileContextEditor.getCurrentChatData();
-                return this.buildContextString(chatData);
-            }
-            return '';
-        } catch (error) {
-            console.error('[Mobile API Integration] 获取上下文失败:', error);
-            return '';
-        }
-    }
-    
-    /**
-     * 构建上下文字符串
-     */
-    buildContextString(chatData) {
-        if (!chatData || !chatData.messages) return '';
-        
-        const recentMessages = chatData.messages.slice(-5);
-        let context = `角色: ${chatData.characterName || '未知'}\n\n`;
-        
-        recentMessages.forEach(msg => {
-            const speaker = msg.is_user ? '用户' : chatData.characterName;
-            context += `${speaker}: ${msg.mes}\n`;
-        });
-        
-        return context;
-    }
-    
-    /**
-     * 手动触发生成
-     */
-    async manualGenerate() {
-        try {
-            console.log('[Mobile API Integration] 🎯 手动触发生成...');
-            
-            if (!this.settings.enabled) {
-                alert('❌ 请先启用智能生成系统！');
-                return;
-            }
-            
-            if (!this.apiConfig || !this.apiConfig.isConfigured()) {
-                alert('❌ 请先配置自定义API！');
-                return;
-            }
-            
-            this.updateStatus('正在生成手机内容...', 'info');
-            
-            // 获取当前聊天上下文
-            const context = await this.getChatContext();
-            if (!context) {
-                throw new Error('无法获取聊天上下文');
-            }
-            
-            // 生成内容
-            const generatedContent = await this.generatePhoneContent(context);
-            console.log('[Mobile API Integration] 生成的内容:', generatedContent);
-            
-            // 解析内容
-            const parsedContents = this.contentParser.parseContent(generatedContent);
-            console.log('[Mobile API Integration] 解析结果:', parsedContents);
-            
-            if (parsedContents.length === 0) {
-                alert('⚠️ 未解析到有效的手机内容格式');
-                this.updateStatus('未解析到有效内容', 'warning');
-                return;
-            }
-            
-            // 获取当前最新消息
-            const chatData = window.mobileContextEditor?.getCurrentChatData();
-            if (chatData && chatData.messages && chatData.messages.length > 0) {
-                const lastMessage = chatData.messages[chatData.messages.length - 1];
-                await this.inlineInserter.insertContent(lastMessage, parsedContents);
-                
-                alert(`✅ 成功生成并插入 ${parsedContents.length} 项手机内容！`);
-                this.updateStatus('生成成功', 'success');
-            } else {
-                alert('⚠️ 无法找到可插入的消息');
-                this.updateStatus('无可插入的消息', 'warning');
-            }
-        } catch (error) {
-            console.error('[Mobile API Integration] 手动生成失败:', error);
-            alert('❌ 生成失败: ' + error.message);
-            this.updateStatus('生成失败', 'error');
-        }
-    }
-    
-    /**
-     * 注册控制台命令
-     */
-    registerConsoleCommands() {
-        if (!window.MobileContext) {
-            window.MobileContext = {};
-        }
-        
-        // 智能生成命令
-        window.MobileContext.generatePhone = () => this.manualGenerate();
-        window.MobileContext.testPhoneAPI = () => this.testGeneration();
-        window.MobileContext.showPhoneConfig = () => this.showConfigPanel();
-        window.MobileContext.getPhoneSettings = () => this.settings;
-        window.MobileContext.enableAutoGenerate = () => {
-            this.settings.autoGenerate = true;
-            this.saveSettings();
-            this.startAutoDetection();
-            console.log('✅ 自动生成已启用');
-        };
-        window.MobileContext.disableAutoGenerate = () => {
-            this.settings.autoGenerate = false;
-            this.saveSettings();
-            console.log('✅ 自动生成已禁用');
-        };
-        
-        console.log('📱 [智能生成系统] 控制台命令已注册:');
-        console.log('  - MobileContext.generatePhone() // 手动触发生成手机内容');
-        console.log('  - MobileContext.testPhoneAPI() // 测试API连接');
-        console.log('  - MobileContext.showPhoneConfig() // 显示配置面板');
-        console.log('  - MobileContext.getPhoneSettings() // 获取当前设置');
-        console.log('  - MobileContext.enableAutoGenerate() // 启用自动生成');
-        console.log('  - MobileContext.disableAutoGenerate() // 禁用自动生成');
+        alert('测试生成功能开发中...');
     }
 }
 
@@ -672,35 +399,4 @@ class InlineInserter {
     }
 }
 
-// 自动初始化
-(function() {
-    console.log('[Mobile API Integration] 准备初始化...');
-    
-    function initMobileAPIIntegration() {
-        if (window.mobileAPIIntegration && window.mobileAPIIntegration.isInitialized) {
-            console.log('[Mobile API Integration] 已初始化，跳过');
-            return;
-        }
-        
-        const integration = new MobileAPIIntegration();
-        integration.initialize().then(success => {
-            if (success) {
-                console.log('[Mobile API Integration] 🎉 智能生成系统已就绪！');
-                console.log('[Mobile API Integration] 使用 MobileContext.generatePhone() 手动生成内容');
-            }
-        });
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initMobileAPIIntegration, 1000);
-        });
-    } else {
-        setTimeout(initMobileAPIIntegration, 1000);
-    }
-})();
-
-// 导出
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { MobileAPIIntegration, ContentParser, InlineInserter };
-}
+//

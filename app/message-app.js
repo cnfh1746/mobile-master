@@ -1599,9 +1599,11 @@ if (typeof window.MessageApp === 'undefined') {
     // 处理朋友圈更新事件
     handleFriendsCircleUpdate(detail) {
       try {
+        // 🔥 修复：不要重新渲染整个页面，让朋友圈自己管理DOM更新
+        // 只在朋友圈未激活时才全量刷新
         if (this.currentMainTab === 'circle' && this.currentView === 'list') {
-          // 如果当前在朋友圈页面，刷新界面
-          this.updateAppContent();
+          console.log('[Message App] 收到朋友圈更新事件，但不触发全量刷新（防止闪烁）');
+          // 不调用 updateAppContent()，让朋友圈的渲染器自己处理DOM更新
         }
       } catch (error) {
         console.error('[Message App] 处理朋友圈更新失败:', error);

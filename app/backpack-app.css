@@ -680,3 +680,105 @@
   background: #5a6268;
   transform: translateY(-1px);
 }
+
+/* 选择模式工具栏样式 */
+.backpack-selection-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.selection-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.enter-selection-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.enter-selection-btn:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.select-all-btn {
+  background: #667eea;
+  color: white;
+}
+
+.select-all-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.delete-selected-btn {
+  background: #ff4757;
+  color: white;
+}
+
+.delete-selected-btn:hover:not(:disabled) {
+  background: #ee3344;
+  transform: translateY(-1px);
+}
+
+.delete-selected-btn:disabled {
+  background: #ccc;
+  color: #888;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancel-selection-btn {
+  background: #95a5a6;
+  color: white;
+}
+
+.cancel-selection-btn:hover {
+  background: #7f8c8d;
+  transform: translateY(-1px);
+}
+
+/* 选择模式下的物品卡片样式 */
+.backpack-item.selected {
+  background: #e8f4fd;
+  border: 2px solid #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.backpack-item .item-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+}
+
+.backpack-item .item-checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+/* 选择模式下物品的样式调整 */
+.backpack-item.selection-mode {
+  position: relative;
+  padding-left: 40px;
+}
+
+.backpack-item.selection-mode:hover {
+  background: #f5f9ff;
+}
+
+.backpack-item.selection-mode.selected:hover {
+  background: #dceefb;
+}

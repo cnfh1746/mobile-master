@@ -25,6 +25,10 @@ if (typeof window.BackpackApp === 'undefined') {
       this.searchQuery = ''; // 搜索关键词
       this.searchDebounceTimer = null; // 搜索防抖定时器
 
+      // 选择和删除相关属性
+      this.selectedItems = new Set(); // 选中的物品ID集合
+      this.isSelectionMode = false; // 是否处于选择模式
+
       this.init();
     }
 
@@ -340,10 +344,44 @@ if (typeof window.BackpackApp === 'undefined') {
       // 过滤物品（根据分类和搜索）
       const filteredItems = this.getFilteredItems();
 
+      // 选择模式工具栏
+      const selectionToolbar = this.isSelectionMode
+        ? `
+          <div class="backpack-selection-toolbar">
+              <button class="selection-btn select-all-btn" id="selectAllBtn">
+                  ${this.selectedItems.size === filteredItems.length && filteredItems.length > 0 ? '取消全选' : '全选'}
+              </button>
+              <button class="selection-btn delete-selected-btn" id="deleteSelectedBtn" 
+                      ${this.selectedItems.size === 0 ? 'disabled' : ''}>
+                  删除选中 (${this.selectedItems.size})
+              </button>
+              <button class="selection-btn cancel-selection-btn" id="cancelSelectionBtn">
+                  取消
+              </button>
+          </div>
+      `
+        : `
+          <div class="backpack-selection-toolbar">
+              <button class="selection-btn enter-selection-btn" id="enterSelectionBtn">
+                  选择物品
+              </button>
+          </div>
+      `;
+
       const itemCards = filteredItems
         .map(
           item => `
-            <div class="backpack-item" data-item-id="${item.id}">
+            <div class="backpack-item ${this.isSelectionMode ? 'selection-mode' : ''} ${this.selectedItems.has(item.id) ? 'selected' : ''}" data-item-id="${item.id}">
+                ${
+                  this.isSelectionMode
+                    ? `<div class="item-checkbox">
+                        <input type="checkbox" 
+                               class="item-checkbox-input" 
+                               data-item-id="${item.id}"
+                               ${this.selectedItems.has(item.id) ? 'checked' : ''}>
+                    </div>`
+                    : ''
+                }
                 <div class="backpack-item-info">
                     <div class="backpack-item-header">
                         <div class="backpack-item-name">${item.name}</div>
@@ -352,7 +390,7 @@ if (typeof window.BackpackApp === 'undefined') {
                     <div class="backpack-item-description">${item.description}</div>
                     <div class="backpack-item-footer">
                         <div class="backpack-item-quantity">数量: ${item.quantity}</div>
-                        <button class="use-item-btn" data-item-id="${item.id}">使用</button>
+                        ${!this.isSelectionMode ? `<button class="use-item-btn" data-item-id="${item.id}">使用</button>` : ''}
                     </div>
                 </div>
             </div>
@@ -398,6 +436,7 @@ if (typeof window.BackpackApp === 'undefined') {
                     <div class="backpack-title">我的背包</div>
                     <div class="backpack-stats">共 ${this.items.length} 种物品，总计 ${totalItems} 件</div>
                 </div>
+                ${selectionToolbar}
                 ${categoryTabsHtml}
                 ${searchBarHtml}
                 <div class="backpack-grid">
@@ -631,6 +670,66 @@ if (typeof window.BackpackApp === 'undefined') {
           e.preventDefault();
           e.stopPropagation();
           this.clearSearch();
+        });
+      }
+
+      // 选择模式相关按钮
+      const enterSelectionBtn = document.getElementById('enterSelectionBtn');
+      if (enterSelectionBtn) {
+        enterSelectionBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.enterSelectionMode();
+        });
+      }
+
+      const selectAllBtn = document.getElementById('selectAllBtn');
+      if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleSelectAll();
+        });
+      }
+
+      const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+      if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.deleteSelected();
+        });
+      }
+
+      const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
+      if (cancelSelectionBtn) {
+        cancelSelectionBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.exitSelectionMode();
+        });
+      }
+
+      // 物品复选框
+      document.querySelectorAll('.item-checkbox-input').forEach(checkbox => {
+        checkbox.addEventListener('change', e => {
+          e.stopPropagation();
+          const itemId = e.target.getAttribute('data-item-id');
+          this.toggleItemSelection(itemId);
+        });
+      });
+
+      // 物品卡片点击（选择模式下）
+      if (this.isSelectionMode) {
+        document.querySelectorAll('.backpack-item').forEach(card => {
+          card.addEventListener('click', e => {
+            // 如果点击的是复选框，不处理
+            if (e.target.classList.contains('item-checkbox-input')) {
+              return;
+            }
+            const itemId = card.getAttribute('data-item-id');
+            this.toggleItemSelection(itemId);
+          });
         });
       }
     }
@@ -1095,6 +1194,155 @@ if (typeof window.BackpackApp === 'undefined') {
           view: 'itemList',
         };
         window.mobilePhone.updateAppHeader(state);
+      }
+    }
+
+    // 进入选择模式
+    enterSelectionMode() {
+      console.log('[Backpack App] 进入选择模式');
+      this.isSelectionMode = true;
+      this.selectedItems.clear();
+      this.updateAppContent();
+    }
+
+    // 退出选择模式
+    exitSelectionMode() {
+      console.log('[Backpack App] 退出选择模式');
+      this.isSelectionMode = false;
+      this.selectedItems.clear();
+      this.updateAppContent();
+    }
+
+    // 切换物品选中状态
+    toggleItemSelection(itemId) {
+      if (this.selectedItems.has(itemId)) {
+        this.selectedItems.delete(itemId);
+      } else {
+        this.selectedItems.add(itemId);
+      }
+      this.updateAppContent();
+    }
+
+    // 全选/取消全选
+    toggleSelectAll() {
+      const filteredItems = this.getFilteredItems();
+      const allSelected = this.selectedItems.size === filteredItems.length && filteredItems.length > 0;
+
+      if (allSelected) {
+        // 取消全选
+        this.selectedItems.clear();
+      } else {
+        // 全选
+        filteredItems.forEach(item => {
+          this.selectedItems.add(item.id);
+        });
+      }
+
+      this.updateAppContent();
+    }
+
+    // 删除选中的物品
+    async deleteSelected() {
+      if (this.selectedItems.size === 0) {
+        this.showToast('请先选择要删除的物品', 'warning');
+        return;
+      }
+
+      // 确认删除
+      const itemNames = Array.from(this.selectedItems)
+        .map(id => {
+          const item = this.items.find(p => p.id === id);
+          return item ? item.name : '';
+        })
+        .filter(name => name)
+        .join('、');
+
+      if (!confirm(`确定要删除这 ${this.selectedItems.size} 件物品吗？\n${itemNames}`)) {
+        return;
+      }
+
+      try {
+        console.log('[Backpack App] 开始删除选中的物品:', Array.from(this.selectedItems));
+
+        // 删除选中的物品
+        await this.deleteItemsFromContext(Array.from(this.selectedItems));
+
+        this.showToast(`已删除 ${this.selectedItems.size} 件物品`, 'success');
+
+        // 退出选择模式
+        this.exitSelectionMode();
+
+        // 刷新物品列表
+        setTimeout(() => {
+          this.parseItemsFromContext();
+        }, 500);
+      } catch (error) {
+        console.error('[Backpack App] 删除物品失败:', error);
+        this.showToast('删除物品失败: ' + error.message, 'error');
+      }
+    }
+
+    // 从上下文中删除物品
+    async deleteItemsFromContext(itemIds) {
+      try {
+        console.log('[Backpack App] 从上下文中删除物品');
+
+        // 获取当前聊天数据
+        const contextData = this.getChatData();
+        if (!contextData || contextData.length === 0) {
+          console.log('[Backpack App] 没有找到聊天数据');
+          return;
+        }
+
+        // 获取要删除的物品信息
+        const itemsToDelete = itemIds.map(id => this.items.find(item => item.id === id)).filter(item => item);
+
+        let hasUpdated = false;
+
+        // 遍历所有消息，删除物品标记
+        for (let i = 0; i < contextData.length; i++) {
+          const message = contextData[i];
+          const content = message.mes || message.content || '';
+
+          let updatedContent = content;
+          let messageModified = false;
+
+          // 对每个要删除的物品进行处理
+          for (const item of itemsToDelete) {
+            const itemPattern = new RegExp(
+              `\\[背包\\|${this.escapeRegex(item.name)}\\|([^\\|]+)\\|([^\\|]+)\\|(\\d+)\\]`,
+              'g',
+            );
+
+            if (itemPattern.test(updatedContent)) {
+              // 将背包标记替换为已删除标记
+              updatedContent = updatedContent.replace(itemPattern, (match, type, description, quantity) => {
+                return `[已删除|${item.name}|${type}|${description}|${quantity}]`;
+              });
+              messageModified = true;
+            }
+          }
+
+          // 如果消息被修改，更新它
+          if (messageModified) {
+            const success = await this.updateMessageContent(i, updatedContent);
+            if (success) {
+              hasUpdated = true;
+              console.log(`[Backpack App] 已更新消息 ${i}`);
+            }
+          }
+        }
+
+        if (hasUpdated) {
+          // 保存聊天数据
+          await this.saveChatData();
+          console.log('[Backpack App] 物品删除完成并已保存');
+        } else {
+          console.log('[Backpack App] 没有找到需要删除的物品');
+        }
+      } catch (error) {
+        console.error('[Backpack App] 删除物品失败:', error);
+        throw error;
       }
     }
 

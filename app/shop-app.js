@@ -22,6 +22,10 @@ if (typeof window.ShopApp === 'undefined') {
       this.eventListenersSetup = false;
       this.contextCheckInterval = null;
 
+      // 选择和删除相关属性
+      this.selectedProducts = new Set(); // 选中的商品ID集合
+      this.isSelectionMode = false; // 是否处于选择模式
+
       this.init();
     }
 
@@ -349,6 +353,30 @@ if (typeof window.ShopApp === 'undefined') {
           ? this.products
           : this.products.filter(p => p.type === this.currentProductType);
 
+      // 选择模式工具栏
+      const selectionToolbar = this.isSelectionMode
+        ? `
+          <div class="shop-selection-toolbar">
+              <button class="selection-btn select-all-btn" id="selectAllProductsBtn">
+                  ${this.selectedProducts.size === filteredProducts.length && filteredProducts.length > 0 ? '取消全选' : '全选'}
+              </button>
+              <button class="selection-btn delete-selected-btn" id="deleteSelectedProductsBtn" 
+                      ${this.selectedProducts.size === 0 ? 'disabled' : ''}>
+                  删除选中 (${this.selectedProducts.size})
+              </button>
+              <button class="selection-btn cancel-selection-btn" id="cancelProductSelectionBtn">
+                  取消
+              </button>
+          </div>
+      `
+        : `
+          <div class="shop-selection-toolbar">
+              <button class="selection-btn enter-selection-btn" id="enterProductSelectionBtn">
+                  选择商品
+              </button>
+          </div>
+      `;
+
       if (!this.products.length) {
         return `
                 <div class="shop-product-list">
@@ -382,7 +410,17 @@ if (typeof window.ShopApp === 'undefined') {
       const productItems = filteredProducts
         .map(
           product => `
-            <div class="product-item" data-product-id="${product.id}">
+            <div class="product-item ${this.selectedProducts.has(product.id) ? 'selected' : ''}" data-product-id="${product.id}">
+                ${
+                  this.isSelectionMode
+                    ? `<div class="item-checkbox">
+                        <input type="checkbox" 
+                               class="item-checkbox-input" 
+                               data-product-id="${product.id}"
+                               ${this.selectedProducts.has(product.id) ? 'checked' : ''}>
+                    </div>`
+                    : ''
+                }
                 <div class="product-info">
                     <div class="product-header">
                         <div class="product-name">${product.name}</div>
@@ -391,9 +429,7 @@ if (typeof window.ShopApp === 'undefined') {
                     <div class="product-description">${product.description}</div>
                     <div class="product-footer">
                         <div class="product-price">¥${product.price.toFixed(2)}</div>
-                        <button class="add-to-cart-btn" data-product-id="${product.id}">
-                            加入购物车
-                        </button>
+                        ${!this.isSelectionMode ? `<button class="add-to-cart-btn" data-product-id="${product.id}">加入购物车</button>` : ''}
                     </div>
                 </div>
             </div>
@@ -404,6 +440,7 @@ if (typeof window.ShopApp === 'undefined') {
       return `
             <div class="shop-product-list">
                 ${this.renderShopTabs()}
+                ${selectionToolbar}
                 ${typeTabsHtml}
                 <div class="product-grid">
                     ${productItems}
@@ -647,6 +684,66 @@ if (typeof window.ShopApp === 'undefined') {
           this.switchProductType(type);
         });
       });
+
+      // 选择模式相关按钮
+      const enterProductSelectionBtn = document.getElementById('enterProductSelectionBtn');
+      if (enterProductSelectionBtn) {
+        enterProductSelectionBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.enterSelectionMode();
+        });
+      }
+
+      const selectAllProductsBtn = document.getElementById('selectAllProductsBtn');
+      if (selectAllProductsBtn) {
+        selectAllProductsBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleSelectAll();
+        });
+      }
+
+      const deleteSelectedProductsBtn = document.getElementById('deleteSelectedProductsBtn');
+      if (deleteSelectedProductsBtn) {
+        deleteSelectedProductsBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.deleteSelected();
+        });
+      }
+
+      const cancelProductSelectionBtn = document.getElementById('cancelProductSelectionBtn');
+      if (cancelProductSelectionBtn) {
+        cancelProductSelectionBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.exitSelectionMode();
+        });
+      }
+
+      // 商品复选框
+      document.querySelectorAll('.item-checkbox-input').forEach(checkbox => {
+        checkbox.addEventListener('change', e => {
+          e.stopPropagation();
+          const productId = e.target.getAttribute('data-product-id');
+          this.toggleProductSelection(productId);
+        });
+      });
+
+      // 商品卡片点击（选择模式下）
+      if (this.isSelectionMode) {
+        document.querySelectorAll('.product-item').forEach(card => {
+          card.addEventListener('click', e => {
+            // 如果点击的是复选框，不处理
+            if (e.target.classList.contains('item-checkbox-input')) {
+              return;
+            }
+            const productId = card.getAttribute('data-product-id');
+            this.toggleProductSelection(productId);
+          });
+        });
+      }
     }
 
     // 切换购物页面标签页
@@ -949,6 +1046,254 @@ ${itemsList}
     // 获取视图标题
     getViewTitle() {
       return '购物';
+    }
+
+    // 进入选择模式
+    enterSelectionMode() {
+      console.log('[Shop App] 进入选择模式');
+      this.isSelectionMode = true;
+      this.selectedProducts.clear();
+      this.updateAppContent();
+    }
+
+    // 退出选择模式
+    exitSelectionMode() {
+      console.log('[Shop App] 退出选择模式');
+      this.isSelectionMode = false;
+      this.selectedProducts.clear();
+      this.updateAppContent();
+    }
+
+    // 切换商品选中状态
+    toggleProductSelection(productId) {
+      if (this.selectedProducts.has(productId)) {
+        this.selectedProducts.delete(productId);
+      } else {
+        this.selectedProducts.add(productId);
+      }
+      this.updateAppContent();
+    }
+
+    // 全选/取消全选
+    toggleSelectAll() {
+      const filteredProducts =
+        this.currentProductType === 'all'
+          ? this.products
+          : this.products.filter(p => p.type === this.currentProductType);
+      
+      const allSelected = this.selectedProducts.size === filteredProducts.length && filteredProducts.length > 0;
+
+      if (allSelected) {
+        // 取消全选
+        this.selectedProducts.clear();
+      } else {
+        // 全选
+        filteredProducts.forEach(product => {
+          this.selectedProducts.add(product.id);
+        });
+      }
+
+      this.updateAppContent();
+    }
+
+    // 删除选中的商品
+    async deleteSelected() {
+      if (this.selectedProducts.size === 0) {
+        this.showToast('请先选择要删除的商品', 'warning');
+        return;
+      }
+
+      // 确认删除
+      const productNames = Array.from(this.selectedProducts)
+        .map(id => {
+          const product = this.products.find(p => p.id === id);
+          return product ? product.name : '';
+        })
+        .filter(name => name)
+        .join('、');
+
+      if (!confirm(`确定要删除这 ${this.selectedProducts.size} 件商品吗？\n${productNames}`)) {
+        return;
+      }
+
+      try {
+        console.log('[Shop App] 开始删除选中的商品:', Array.from(this.selectedProducts));
+
+        // 删除选中的商品
+        await this.deleteProductsFromContext(Array.from(this.selectedProducts));
+
+        this.showToast(`已删除 ${this.selectedProducts.size} 件商品`, 'success');
+
+        // 退出选择模式
+        this.exitSelectionMode();
+
+        // 刷新商品列表
+        setTimeout(() => {
+          this.parseProductsFromContext();
+        }, 500);
+      } catch (error) {
+        console.error('[Shop App] 删除商品失败:', error);
+        this.showToast('删除商品失败: ' + error.message, 'error');
+      }
+    }
+
+    // 从上下文中删除商品
+    async deleteProductsFromContext(productIds) {
+      try {
+        console.log('[Shop App] 从上下文中删除商品');
+
+        // 获取当前聊天数据
+        const contextData = this.getChatData();
+        if (!contextData || contextData.length === 0) {
+          console.log('[Shop App] 没有找到聊天数据');
+          return;
+        }
+
+        // 获取要删除的商品信息
+        const productsToDelete = productIds.map(id => this.products.find(product => product.id === id)).filter(product => product);
+
+        let hasUpdated = false;
+
+        // 遍历所有消息，删除商品标记
+        for (let i = 0; i < contextData.length; i++) {
+          const message = contextData[i];
+          const content = message.mes || message.content || '';
+
+          let updatedContent = content;
+          let messageModified = false;
+
+          // 对每个要删除的商品进行处理
+          for (const product of productsToDelete) {
+            const productPattern = new RegExp(
+              `\\[商品\\|${this.escapeRegex(product.name)}\\|([^\\|]+)\\|([^\\|]+)\\|([^\\]]+)\\]`,
+              'g',
+            );
+
+            if (productPattern.test(updatedContent)) {
+              // 将商品标记替换为已删除标记
+              updatedContent = updatedContent.replace(productPattern, (match, type, description, price) => {
+                return `[已删除|${product.name}|${type}|${description}|${price}]`;
+              });
+              messageModified = true;
+            }
+          }
+
+          // 如果消息被修改，更新它
+          if (messageModified) {
+            const success = await this.updateMessageContent(i, updatedContent);
+            if (success) {
+              hasUpdated = true;
+              console.log(`[Shop App] 已更新消息 ${i}`);
+            }
+          }
+        }
+
+        if (hasUpdated) {
+          // 保存聊天数据
+          await this.saveChatData();
+          console.log('[Shop App] 商品删除完成并已保存');
+        } else {
+          console.log('[Shop App] 没有找到需要删除的商品');
+        }
+      } catch (error) {
+        console.error('[Shop App] 删除商品失败:', error);
+        throw error;
+      }
+    }
+
+    // 转义正则表达式特殊字符
+    escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // 更新消息内容
+    async updateMessageContent(messageIndex, newContent) {
+      try {
+        console.log(`[Shop App] 正在更新消息 ${messageIndex}:`, newContent.substring(0, 100) + '...');
+
+        // 方法1: 使用全局chat数组直接更新
+        const chat = window['chat'];
+        if (chat && Array.isArray(chat) && chat[messageIndex]) {
+          const originalContent = chat[messageIndex].mes;
+          chat[messageIndex].mes = newContent;
+
+          // 如果消息有swipes，也需要更新
+          if (chat[messageIndex].swipes && chat[messageIndex].swipe_id !== undefined) {
+            chat[messageIndex].swipes[chat[messageIndex].swipe_id] = newContent;
+          }
+
+          // 标记聊天数据已被修改
+          if (window.chat_metadata) {
+            window.chat_metadata.tainted = true;
+          }
+
+          console.log(
+            `[Shop App] 已更新消息 ${messageIndex}，原内容长度:${originalContent.length}，新内容长度:${newContent.length}`,
+          );
+          return true;
+        }
+
+        // 方法2: 尝试通过编辑器功能更新
+        if (window.mobileContextEditor && window.mobileContextEditor.modifyMessage) {
+          await window.mobileContextEditor.modifyMessage(messageIndex, newContent);
+          return true;
+        }
+
+        // 方法3: 尝试通过context-editor更新
+        if (window.contextEditor && window.contextEditor.modifyMessage) {
+          await window.contextEditor.modifyMessage(messageIndex, newContent);
+          return true;
+        }
+
+        console.warn('[Shop App] 没有找到有效的消息更新方法');
+        return false;
+      } catch (error) {
+        console.error('[Shop App] 更新消息内容失败:', error);
+        return false;
+      }
+    }
+
+    // 保存聊天数据
+    async saveChatData() {
+      try {
+        console.log('[Shop App] 开始保存聊天数据...');
+
+        // 方法1: 使用SillyTavern的保存函数
+        if (typeof window.saveChatConditional === 'function') {
+          await window.saveChatConditional();
+          console.log('[Shop App] 已通过saveChatConditional保存聊天数据');
+          return true;
+        }
+
+        // 方法2: 使用延迟保存
+        if (typeof window.saveChatDebounced === 'function') {
+          window.saveChatDebounced();
+          console.log('[Shop App] 已通过saveChatDebounced保存聊天数据');
+          // 等待一下确保保存完成
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return true;
+        }
+
+        // 方法3: 使用编辑器的保存功能
+        if (window.mobileContextEditor && typeof window.mobileContextEditor.saveChatData === 'function') {
+          await window.mobileContextEditor.saveChatData();
+          console.log('[Shop App] 已通过mobileContextEditor保存聊天数据');
+          return true;
+        }
+
+        // 方法4: 尝试通过context-editor的保存功能
+        if (window.contextEditor && typeof window.contextEditor.saveChatData === 'function') {
+          await window.contextEditor.saveChatData();
+          console.log('[Shop App] 已通过contextEditor保存聊天数据');
+          return true;
+        }
+
+        console.warn('[Shop App] 没有找到有效的保存方法');
+        return false;
+      } catch (error) {
+        console.error('[Shop App] 保存聊天数据失败:', error);
+        return false;
+      }
     }
 
     // 显示提示消息

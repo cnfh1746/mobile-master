@@ -5890,6 +5890,7 @@ class MobilePhone {
                 '/scripts/extensions/third-party/mobile/app/message-app.css',
                 '/scripts/extensions/third-party/mobile/app/message-renderer.css',
                 '/scripts/extensions/third-party/mobile/app/friends-circle.css',
+                '/scripts/extensions/third-party/mobile/app/message-app-unread.css',
             ];
 
             cssFiles.forEach(href => {
@@ -5910,6 +5911,7 @@ class MobilePhone {
                 '/scripts/extensions/third-party/mobile/app/message-renderer.js',
                 '/scripts/extensions/third-party/mobile/app/message-sender.js',
                 '/scripts/extensions/third-party/mobile/app/friends-circle.js',
+                '/scripts/extensions/third-party/mobile/app/message-app-unread.js',
                 '/scripts/extensions/third-party/mobile/app/message-app.js',
             ];
 

@@ -725,11 +725,28 @@ if (typeof window.MessageApp === 'undefined') {
         console.log(`[Message App] ✅ 新消息: ${this.lastMessageCount} → ${currentMessageCount}`);
         this.lastMessageCount = currentMessageCount;
 
+        // 增加未读消息计数（如果不在当前聊天窗口）
+        if (window.unreadMessageManager && this.currentView !== 'messageDetail') {
+          // 从消息中提取发送者ID
+          const chatData = this.getSillyTavernChatData();
+          if (chatData && chatData.messages && chatData.messages.length > 0) {
+            const lastMessage = chatData.messages[chatData.messages.length - 1];
+            // 这里可以根据消息内容判断是哪个好友的消息
+            // 暂时标记为通用未读
+            window.unreadMessageManager.addUnread('general');
+          }
+        }
+
         // 刷新消息显示
         this.refreshMessages();
 
         // 触发其他相关更新
         this.updateTimeDisplay();
+
+        // 更新未读红点
+        if (this.currentView === 'list') {
+          this.updateUnreadBadges();
+        }
       } catch (error) {
         console.error('[Message App] 处理消息接收事件失败:', error);
       }

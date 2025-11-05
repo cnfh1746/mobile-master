@@ -1,0 +1,98 @@
+/**
+ * 未读消息红点样式
+ */
+
+/* 未读红点基础样式 */
+.unread-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: white;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 0 5px;
+  box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
+  z-index: 10;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* 红点脉动动画 */
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.5);
+  }
+}
+
+/* 消息项容器需要相对定位 */
+.message-item {
+  position: relative;
+}
+
+/* 好友头像容器 */
+.message-avatar,
+.friend-avatar {
+  position: relative;
+}
+
+/* 隐藏红点 */
+.unread-badge[style*="display: none"] {
+  display: none !important;
+}
+
+/* 新消息提示动画 */
+@keyframes newMessageBlink {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(33, 150, 243, 0.1);
+  }
+}
+
+.message-item.has-new-message {
+  animation: newMessageBlink 1s ease-in-out 3;
+}
+
+/* 未读计数较大时的样式 */
+.unread-badge.large {
+  font-size: 10px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+  .unread-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+  
+  .unread-badge.large {
+    min-width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .unread-badge {
+    background: linear-gradient(135deg, #ff5555 0%, #dd0000 100%);
+    box-shadow: 0 2px 4px rgba(255, 85, 85, 0.4);
+  }
+}

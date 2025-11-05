@@ -89,7 +89,6 @@
 
 /* 头像 - 与聊天详情页保持一致，强制覆盖scale变换 */
 .message-avatar {
-  position: relative; /* 为未读红点提供定位参考 */
   width: 40px !important; /* 强制设置为40px，不受scale影响 */
   height: 40px !important;
   min-width: 40px !important; /* 防止被压缩 */
@@ -682,7 +681,6 @@
 }
 
 .friend-avatar {
-  position: relative; /* 为未读红点提供定位参考 */
   width: 50px;
   height: 50px;
   border-radius: 50%;

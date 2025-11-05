@@ -143,12 +143,6 @@ if (typeof window.MessageApp === 'undefined') {
       setTimeout(() => {
         this.loadAttachmentSenderSilently();
       }, 1500);
-
-      // 🔥 新增：监听未读消息更新事件
-      window.addEventListener('unreadMessagesUpdate', (event) => {
-        console.log('[Message App] 📩 收到未读消息更新事件:', event.detail);
-        this.updateUnreadBadges();
-      });
     }
 
     // 设置增量渲染器
@@ -274,11 +268,6 @@ if (typeof window.MessageApp === 'undefined') {
 
         // 重新绑定事件
         this.bindMessageListEvents();
-
-        // 🔥 新增：刷新后更新未读红点
-        setTimeout(() => {
-          this.updateUnreadBadges();
-        }, 100);
 
         console.log('[Message App] ✅ 好友列表UI已刷新');
       } catch (error) {
@@ -736,159 +725,13 @@ if (typeof window.MessageApp === 'undefined') {
         console.log(`[Message App] ✅ 新消息: ${this.lastMessageCount} → ${currentMessageCount}`);
         this.lastMessageCount = currentMessageCount;
 
-        // 增加未读消息计数（如果不在当前聊天窗口）
-        if (window.unreadMessageManager) {
-          // 从消息中提取发送者ID
-          const chatData = this.getSillyTavernChatData();
-          if (chatData && chatData.messages && chatData.messages.length > 0) {
-            const lastMessage = chatData.messages[chatData.messages.length - 1];
-            
-            // 尝试从消息内容中提取好友ID
-            const friendId = this.extractFriendIdFromMessage(lastMessage);
-            
-            if (friendId) {
-              // 只有当前不在该好友的聊天窗口时才增加未读
-              if (this.currentView !== 'messageDetail' || this.currentFriendId !== friendId) {
-                window.unreadMessageManager.incrementUnread(friendId);
-                console.log(`[Message App] 📩 好友 ${friendId} 未读消息 +1`);
-              }
-            } else {
-              // 如果无法提取好友ID，使用通用未读
-              if (this.currentView !== 'messageDetail') {
-                window.unreadMessageManager.incrementUnread('general');
-                console.log(`[Message App] 📩 通用未读消息 +1`);
-              }
-            }
-          }
-        }
-
         // 刷新消息显示
         this.refreshMessages();
 
         // 触发其他相关更新
         this.updateTimeDisplay();
-
-        // 🔥 修复：无论在哪个视图都更新未读红点
-        this.updateUnreadBadges();
       } catch (error) {
         console.error('[Message App] 处理消息接收事件失败:', error);
-      }
-    }
-
-    /**
-     * 从消息中提取好友ID
-     */
-    extractFriendIdFromMessage(message) {
-      if (!message || !message.mes) {
-        return null;
-      }
-
-      try {
-        const content = message.mes;
-        
-        // 尝试匹配各种消息格式 - 修复正则表达式
-        const patterns = [
-          { regex: /\[对方消息\|[^|]+\|(\d+)\|/, group: 1 },
-          { regex: /\[我方消息\|我\|(\d+)\|/, group: 1 },
-          { regex: /\[群聊消息\|(\d+)\|/, group: 1 },
-          { regex: /\[好友id\|[^|]+\|(\d+)\]/, group: 1 },
-        ];
-
-        for (const pattern of patterns) {
-          const match = content.match(pattern.regex);
-          if (match && match[pattern.group]) {
-            return match[pattern.group];
-          }
-        }
-
-        return null;
-      } catch (error) {
-        console.error('[Message App] 提取好友ID失败:', error);
-        return null;
-      }
-    }
-
-    /**
-     * 刷新消息显示（新增方法）
-     */
-    refreshMessages() {
-      try {
-        // 根据当前视图刷新对应内容
-        if (this.currentView === 'list') {
-          this.refreshFriendListUI();
-        } else if (this.currentView === 'messageDetail') {
-          this.refreshMessageDetail();
-        }
-      } catch (error) {
-        console.error('[Message App] 刷新消息显示失败:', error);
-      }
-    }
-
-    /**
-     * 更新时间显示（新增方法）
-     */
-    updateTimeDisplay() {
-      try {
-        const timeElements = document.querySelectorAll('.message-item .time');
-        timeElements.forEach(element => {
-          // 更新为当前时间
-          element.textContent = new Date().toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-        });
-      } catch (error) {
-        console.error('[Message App] 更新时间显示失败:', error);
-      }
-    }
-
-    /**
-     * 更新未读红点显示
-     */
-    updateUnreadBadges() {
-      try {
-        if (!window.unreadMessageManager) {
-          return;
-        }
-
-        console.log('[Message App] 🔴 更新未读红点显示');
-
-        const messageItems = document.querySelectorAll('.message-item');
-        messageItems.forEach(item => {
-          const friendId = item.getAttribute('data-friend-id');
-          if (!friendId) return;
-
-          const unreadCount = window.unreadMessageManager.getUnread(friendId);
-          
-          // 🔥 修复：寻找正确的头像元素（可能是 .message-avatar 或 .friend-avatar）
-          const avatarElement = item.querySelector('.message-avatar') || item.querySelector('.friend-avatar');
-          if (!avatarElement) {
-            console.warn(`[Message App] ⚠️ 好友 ${friendId} 找不到头像元素`);
-            return;
-          }
-          
-          let badge = avatarElement.querySelector('.unread-badge');
-
-          if (unreadCount > 0) {
-            // 显示红点
-            if (!badge) {
-              badge = document.createElement('div');
-              badge.className = 'unread-badge';
-              avatarElement.appendChild(badge);
-              console.log(`[Message App] 🔴 为好友 ${friendId} 创建红点元素`);
-            }
-            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = 'block';
-            console.log(`[Message App] 🔴 好友 ${friendId} 显示未读: ${unreadCount}`);
-          } else {
-            // 隐藏红点
-            if (badge) {
-              badge.style.display = 'none';
-            }
-          }
-        });
-      } catch (error) {
-        console.error('[Message App] 更新未读红点失败:', error);
       }
     }
 

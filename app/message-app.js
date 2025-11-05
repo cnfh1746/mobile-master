@@ -859,14 +859,23 @@ if (typeof window.MessageApp === 'undefined') {
           if (!friendId) return;
 
           const unreadCount = window.unreadMessageManager.getUnread(friendId);
-          let badge = item.querySelector('.unread-badge');
+          
+          // 🔥 修复：红点应该添加到 .friend-avatar 元素上，而不是 .message-item
+          const avatarElement = item.querySelector('.friend-avatar');
+          if (!avatarElement) {
+            console.warn(`[Message App] ⚠️ 好友 ${friendId} 找不到 .friend-avatar 元素`);
+            return;
+          }
+          
+          let badge = avatarElement.querySelector('.unread-badge');
 
           if (unreadCount > 0) {
             // 显示红点
             if (!badge) {
               badge = document.createElement('div');
               badge.className = 'unread-badge';
-              item.appendChild(badge);
+              avatarElement.appendChild(badge);
+              console.log(`[Message App] 🔴 为好友 ${friendId} 创建红点元素`);
             }
             badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
             badge.style.display = 'block';

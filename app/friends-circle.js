@@ -43,13 +43,13 @@ if (typeof window.FriendsCircle === 'undefined') {
         return false;
       }
 
-      // 🌟 优先检查：如果内容包含反引号包裹的图片标签，认为是合法的
-      const hasBacktickImage = /```[\s\S]*?<img[\s\S]*?>[\s\S]*?```/.test(content);
+      // 🌟 优先检查：如果内容包含<img标签（无论是否被反引号包裹），认为是合法的图片内容
+      const hasImageTag = /<img[\s\S]*?>/i.test(content);
       
-      if (hasBacktickImage) {
-        console.log('[Friends Circle] ✅ 检测到反引号包裹的图片标签，使用宽松验证模式');
-        // 对于包含反引号图片的内容，使用更宽松的验证
-        // 只检查明显的非朋友圈内容模式
+      if (hasImageTag) {
+        console.log('[Friends Circle] ✅ 检测到<img>标签，使用宽松验证模式（允许图片）');
+        
+        // 对于包含图片的内容，只检查明显的非朋友圈内容模式
         const criticalInvalidPatterns = [
           /^\s*-\s*序号:/, // 序号格式
           /^\s*\|\s*名字\s*\|/, // 表格头
@@ -61,23 +61,23 @@ if (typeof window.FriendsCircle === 'undefined') {
         
         for (const pattern of criticalInvalidPatterns) {
           if (pattern.test(content)) {
-            console.log(`[Friends Circle] ❌ 内容验证失败，匹配到无效模式: ${pattern}`, content.substring(0, 100));
+            console.log(`[Friends Circle] ❌ 图片内容验证失败，匹配到无效模式: ${pattern}`, content.substring(0, 100));
             return false;
           }
         }
         
         // 放宽长度限制（因为图片URL可能很长）
-        if (content.length > 2000) {
-          console.log(`[Friends Circle] ❌ 内容过长: ${content.length} 字符`);
+        if (content.length > 5000) {
+          console.log(`[Friends Circle] ❌ 图片内容过长: ${content.length} 字符`);
           return false;
         }
         
-        console.log('[Friends Circle] ✅ 宽松验证通过，接受带反引号的图片内容');
-        return true; // 🔥 关键：验证通过后立即返回，不再执行后续标准验证
+        console.log('[Friends Circle] ✅ 图片内容验证通过，接受包含<img>标签的内容');
+        return true; // 🔥 立即返回true，跳过后续的标准验证（标准验证会拒绝<img>标签）
       }
 
-      // 🔥 只有当内容不包含反引号图片时，才执行标准验证
-      console.log('[Friends Circle] 使用标准验证模式（无反引号图片）');
+      // 🔥 只有当内容不包含图片时，才执行标准验证
+      console.log('[Friends Circle] 使用标准验证模式（无图片内容）');
       
       // 标准验证：检查是否包含明显的非朋友圈内容
       const invalidPatterns = [
@@ -85,7 +85,7 @@ if (typeof window.FriendsCircle === 'undefined') {
         /^\s*\|\s*名字\s*\|/, // 表格头
         /^\s*\|\s*[^|]+\s*\|\s*[^|]+\s*\|/, // 表格行
         /剧情总结:/, // 剧情总结
-        /^\s*<[^>]+>/, // HTML标签（非反引号包裹的）
+        /^\s*<[^>]+>/, // HTML标签（非图片）
         /^\s*\[好友id\|/, // 好友ID格式
         /^\s*<UpdateVariable>/, // 变量更新
         /^\s*<content>/, // content标签

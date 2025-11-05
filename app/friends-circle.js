@@ -47,7 +47,7 @@ if (typeof window.FriendsCircle === 'undefined') {
       const hasBacktickImage = /```[\s\S]*?<img[\s\S]*?>[\s\S]*?```/.test(content);
       
       if (hasBacktickImage) {
-        console.log('[Friends Circle] ✅ 检测到反引号包裹的图片标签，内容验证通过');
+        console.log('[Friends Circle] ✅ 检测到反引号包裹的图片标签，使用宽松验证模式');
         // 对于包含反引号图片的内容，使用更宽松的验证
         // 只检查明显的非朋友圈内容模式
         const criticalInvalidPatterns = [
@@ -72,9 +72,13 @@ if (typeof window.FriendsCircle === 'undefined') {
           return false;
         }
         
-        return true;
+        console.log('[Friends Circle] ✅ 宽松验证通过，接受带反引号的图片内容');
+        return true; // 🔥 关键：验证通过后立即返回，不再执行后续标准验证
       }
 
+      // 🔥 只有当内容不包含反引号图片时，才执行标准验证
+      console.log('[Friends Circle] 使用标准验证模式（无反引号图片）');
+      
       // 标准验证：检查是否包含明显的非朋友圈内容
       const invalidPatterns = [
         /^\s*-\s*序号:/, // 序号格式

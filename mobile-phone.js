@@ -5822,7 +5822,7 @@ class MobilePhone {
         // 标记正在加载
         window._messageAppLoading = new Promise((resolve, reject) => {
             let loadedCount = 0;
-            const totalFiles = 8; // message-app.css + message-renderer.css + friends-circle.css + friend-renderer.js + message-renderer.js + message-sender.js + friends-circle.js + message-app.js
+            const totalFiles = 10; // message-app.css + message-renderer.css + friends-circle.css + message-app-unread.css + friend-renderer.js + message-renderer.js + message-sender.js + friends-circle.js + message-app-unread.js + message-app.js
 
             const checkComplete = () => {
                 loadedCount++;
@@ -5885,7 +5885,7 @@ class MobilePhone {
 
             removeExistingTags();
 
-            // 加载CSS文件
+            // 加载CSS文件（包含未读管理器样式）
             const cssFiles = [
                 '/scripts/extensions/third-party/mobile/app/message-app.css',
                 '/scripts/extensions/third-party/mobile/app/message-renderer.css',
@@ -5905,13 +5905,13 @@ class MobilePhone {
                 document.head.appendChild(cssLink);
             });
 
-            // 加载JavaScript文件 - 按正确顺序
+            // 加载JavaScript文件 - 按正确顺序（未读管理器必须在message-app.js之前加载）
             const jsFiles = [
                 '/scripts/extensions/third-party/mobile/app/friend-renderer.js',
                 '/scripts/extensions/third-party/mobile/app/message-renderer.js',
                 '/scripts/extensions/third-party/mobile/app/message-sender.js',
                 '/scripts/extensions/third-party/mobile/app/friends-circle.js',
-                '/scripts/extensions/third-party/mobile/app/message-app-unread.js',
+                '/scripts/extensions/third-party/mobile/app/message-app-unread.js',  // 未读管理器
                 '/scripts/extensions/third-party/mobile/app/message-app.js',
             ];
 

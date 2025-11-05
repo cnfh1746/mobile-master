@@ -726,14 +726,28 @@ if (typeof window.MessageApp === 'undefined') {
         this.lastMessageCount = currentMessageCount;
 
         // 增加未读消息计数（如果不在当前聊天窗口）
-        if (window.unreadMessageManager && this.currentView !== 'messageDetail') {
+        if (window.unreadMessageManager) {
           // 从消息中提取发送者ID
           const chatData = this.getSillyTavernChatData();
           if (chatData && chatData.messages && chatData.messages.length > 0) {
             const lastMessage = chatData.messages[chatData.messages.length - 1];
-            // 这里可以根据消息内容判断是哪个好友的消息
-            // 暂时标记为通用未读
-            window.unreadMessageManager.addUnread('general');
+            
+            // 尝试从消息内容中提取好友ID
+            const friendId = this.extractFriendIdFromMessage(lastMessage);
+            
+            if (friendId) {
+              // 只有当前不在该好友的聊天窗口时才增加未读
+              if (this.currentView !== 'messageDetail' || this.currentFriendId !== friendId) {
+                window.unreadMessageManager.incrementUnread(friendId);
+                console.log(`[Message App] 📩 好友 ${friendId} 未读消息 +1`);
+              }
+            } else {
+              // 如果无法提取好友ID，使用通用未读
+              if (this.currentView !== 'messageDetail') {
+                window.unreadMessageManager.incrementUnread('general');
+                console.log(`[Message App] 📩 通用未读消息 +1`);
+              }
+            }
           }
         }
 
@@ -749,6 +763,123 @@ if (typeof window.MessageApp === 'undefined') {
         }
       } catch (error) {
         console.error('[Message App] 处理消息接收事件失败:', error);
+      }
+    }
+
+    /**
+     * 从消息中提取好友ID
+     */
+    extractFriendIdFromMessage(message) {
+      if (!message || !message.mes) {
+        return null;
+      }
+
+      try {
+        const content = message.mes;
+        
+        // 尝试匹配各种消息格式
+        const patterns = [
+          /\[对方消息\|([^|]+)\|(\d+)\|/,  // [对方消息|好友名|好友ID|...]
+          /\[我方消息\|我\|(\d+)\|/,         // [我方消息|我|好友ID|...]
+          /\[群聊消息\|(\d+)\|/,             // [群聊消息|群ID|...]
+          /\[好友id\|[^|]+\|(\d+)\]/,       // [好友id|名字|ID]
+        ];
+
+        for (const pattern of patterns) {
+          const match = content.match(pattern);
+          if (match) {
+            // 根据不同的模式提取ID
+            if (pattern.source.includes('对方消息')) {
+              return match[2]; // 好友ID在第2个捕获组
+            } else if (pattern.source.includes('我方消息')) {
+              return match[1]; // 好友ID在第1个捕获组
+            } else if (pattern.source.includes('群聊消息')) {
+              return 'group_' + match[1]; // 群聊ID加上前缀
+            } else if (pattern.source.includes('好友id')) {
+              return match[1]; // 好友ID
+            }
+          }
+        }
+
+        return null;
+      } catch (error) {
+        console.error('[Message App] 提取好友ID失败:', error);
+        return null;
+      }
+    }
+
+    /**
+     * 刷新消息显示（新增方法）
+     */
+    refreshMessages() {
+      try {
+        // 根据当前视图刷新对应内容
+        if (this.currentView === 'list') {
+          this.refreshFriendListUI();
+        } else if (this.currentView === 'messageDetail') {
+          this.refreshMessageDetail();
+        }
+      } catch (error) {
+        console.error('[Message App] 刷新消息显示失败:', error);
+      }
+    }
+
+    /**
+     * 更新时间显示（新增方法）
+     */
+    updateTimeDisplay() {
+      try {
+        const timeElements = document.querySelectorAll('.message-item .time');
+        timeElements.forEach(element => {
+          // 更新为当前时间
+          element.textContent = new Date().toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        });
+      } catch (error) {
+        console.error('[Message App] 更新时间显示失败:', error);
+      }
+    }
+
+    /**
+     * 更新未读红点显示
+     */
+    updateUnreadBadges() {
+      try {
+        if (!window.unreadMessageManager) {
+          return;
+        }
+
+        console.log('[Message App] 🔴 更新未读红点显示');
+
+        const messageItems = document.querySelectorAll('.message-item');
+        messageItems.forEach(item => {
+          const friendId = item.getAttribute('data-friend-id');
+          if (!friendId) return;
+
+          const unreadCount = window.unreadMessageManager.getUnread(friendId);
+          let badge = item.querySelector('.unread-badge');
+
+          if (unreadCount > 0) {
+            // 显示红点
+            if (!badge) {
+              badge = document.createElement('div');
+              badge.className = 'unread-badge';
+              item.appendChild(badge);
+            }
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'block';
+            console.log(`[Message App] 🔴 好友 ${friendId} 显示未读: ${unreadCount}`);
+          } else {
+            // 隐藏红点
+            if (badge) {
+              badge.style.display = 'none';
+            }
+          }
+        });
+      } catch (error) {
+        console.error('[Message App] 更新未读红点失败:', error);
       }
     }
 

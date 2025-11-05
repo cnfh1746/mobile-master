@@ -143,6 +143,12 @@ if (typeof window.MessageApp === 'undefined') {
       setTimeout(() => {
         this.loadAttachmentSenderSilently();
       }, 1500);
+
+      // 🔥 新增：监听未读消息更新事件
+      window.addEventListener('unreadMessagesUpdate', (event) => {
+        console.log('[Message App] 📩 收到未读消息更新事件:', event.detail);
+        this.updateUnreadBadges();
+      });
     }
 
     // 设置增量渲染器
@@ -268,6 +274,11 @@ if (typeof window.MessageApp === 'undefined') {
 
         // 重新绑定事件
         this.bindMessageListEvents();
+
+        // 🔥 新增：刷新后更新未读红点
+        setTimeout(() => {
+          this.updateUnreadBadges();
+        }, 100);
 
         console.log('[Message App] ✅ 好友列表UI已刷新');
       } catch (error) {
@@ -757,10 +768,8 @@ if (typeof window.MessageApp === 'undefined') {
         // 触发其他相关更新
         this.updateTimeDisplay();
 
-        // 更新未读红点
-        if (this.currentView === 'list') {
-          this.updateUnreadBadges();
-        }
+        // 🔥 修复：无论在哪个视图都更新未读红点
+        this.updateUnreadBadges();
       } catch (error) {
         console.error('[Message App] 处理消息接收事件失败:', error);
       }
@@ -777,27 +786,18 @@ if (typeof window.MessageApp === 'undefined') {
       try {
         const content = message.mes;
         
-        // 尝试匹配各种消息格式
+        // 尝试匹配各种消息格式 - 修复正则表达式
         const patterns = [
-          /\[对方消息\|([^|]+)\|(\d+)\|/,  // [对方消息|好友名|好友ID|...]
-          /\[我方消息\|我\|(\d+)\|/,         // [我方消息|我|好友ID|...]
-          /\[群聊消息\|(\d+)\|/,             // [群聊消息|群ID|...]
-          /\[好友id\|[^|]+\|(\d+)\]/,       // [好友id|名字|ID]
+          { regex: /\[对方消息\|[^|]+\|(\d+)\|/, group: 1 },
+          { regex: /\[我方消息\|我\|(\d+)\|/, group: 1 },
+          { regex: /\[群聊消息\|(\d+)\|/, group: 1 },
+          { regex: /\[好友id\|[^|]+\|(\d+)\]/, group: 1 },
         ];
 
         for (const pattern of patterns) {
-          const match = content.match(pattern);
-          if (match) {
-            // 根据不同的模式提取ID
-            if (pattern.source.includes('对方消息')) {
-              return match[2]; // 好友ID在第2个捕获组
-            } else if (pattern.source.includes('我方消息')) {
-              return match[1]; // 好友ID在第1个捕获组
-            } else if (pattern.source.includes('群聊消息')) {
-              return 'group_' + match[1]; // 群聊ID加上前缀
-            } else if (pattern.source.includes('好友id')) {
-              return match[1]; // 好友ID
-            }
+          const match = content.match(pattern.regex);
+          if (match && match[pattern.group]) {
+            return match[pattern.group];
           }
         }
 
@@ -860,10 +860,10 @@ if (typeof window.MessageApp === 'undefined') {
 
           const unreadCount = window.unreadMessageManager.getUnread(friendId);
           
-          // 🔥 修复：红点应该添加到 .friend-avatar 元素上，而不是 .message-item
-          const avatarElement = item.querySelector('.friend-avatar');
+          // 🔥 修复：寻找正确的头像元素（可能是 .message-avatar 或 .friend-avatar）
+          const avatarElement = item.querySelector('.message-avatar') || item.querySelector('.friend-avatar');
           if (!avatarElement) {
-            console.warn(`[Message App] ⚠️ 好友 ${friendId} 找不到 .friend-avatar 元素`);
+            console.warn(`[Message App] ⚠️ 好友 ${friendId} 找不到头像元素`);
             return;
           }
           

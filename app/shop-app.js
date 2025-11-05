@@ -1071,7 +1071,7 @@ ${itemsList}
       } else {
         this.selectedProducts.add(productId);
       }
-      this.updateAppContent();
+      this.updateAppContent(true); // 保持滚动位置
     }
 
     // 全选/取消全选
@@ -1093,7 +1093,7 @@ ${itemsList}
         });
       }
 
-      this.updateAppContent();
+      this.updateAppContent(true); // 保持滚动位置
     }
 
     // 删除选中的商品

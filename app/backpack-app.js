@@ -602,11 +602,30 @@ if (typeof window.BackpackApp === 'undefined') {
     }
 
     // 更新应用内容
-    updateAppContent() {
+    updateAppContent(preserveScrollPosition = false) {
       const appContent = document.getElementById('app-content');
       if (appContent) {
+        // 保存滚动位置
+        let scrollTop = 0;
+        if (preserveScrollPosition) {
+          const scrollContainer = appContent.querySelector('.backpack-grid');
+          if (scrollContainer) {
+            scrollTop = scrollContainer.scrollTop;
+          }
+        }
+
         appContent.innerHTML = this.getAppContent();
         this.bindEvents();
+
+        // 恢复滚动位置
+        if (preserveScrollPosition && scrollTop > 0) {
+          setTimeout(() => {
+            const scrollContainer = appContent.querySelector('.backpack-grid');
+            if (scrollContainer) {
+              scrollContainer.scrollTop = scrollTop;
+            }
+          }, 0);
+        }
       }
     }
 
@@ -1220,7 +1239,7 @@ if (typeof window.BackpackApp === 'undefined') {
       } else {
         this.selectedItems.add(itemId);
       }
-      this.updateAppContent();
+      this.updateAppContent(true); // 保持滚动位置
     }
 
     // 全选/取消全选
@@ -1238,7 +1257,7 @@ if (typeof window.BackpackApp === 'undefined') {
         });
       }
 
-      this.updateAppContent();
+      this.updateAppContent(true); // 保持滚动位置
     }
 
     // 删除选中的物品

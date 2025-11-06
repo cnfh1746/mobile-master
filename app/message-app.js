@@ -1601,7 +1601,7 @@ if (typeof window.MessageApp === 'undefined') {
       try {
         if (this.currentMainTab === 'circle' && this.currentView === 'list') {
           // 如果当前在朋友圈页面，刷新界面
-          this.updateAppContent(detail.preserveScroll);
+          this.updateAppContent();
         }
       } catch (error) {
         console.error('[Message App] 处理朋友圈更新失败:', error);
@@ -1635,13 +1635,6 @@ if (typeof window.MessageApp === 'undefined') {
 
       // 更新界面
       this.updateAppContent();
-
-      // 绑定朋友圈事件
-      setTimeout(() => {
-        if (window.bindFriendsCircleEvents) {
-          window.bindFriendsCircleEvents();
-        }
-      }, 100);
 
       // 通知主框架更新应用状态
       if (window.mobilePhone) {
@@ -4630,7 +4623,7 @@ if (typeof window.MessageApp === 'undefined') {
     }
 
     // 更新应用内容
-    updateAppContent(preserveScroll = false) {
+    updateAppContent() {
       try {
         const appContent = document.getElementById('app-content');
         if (!appContent) {
@@ -4639,15 +4632,7 @@ if (typeof window.MessageApp === 'undefined') {
         }
 
         // 保存当前的滚动位置（如果需要的话）
-        let currentScrollTop = 0;
-        if (preserveScroll) {
-          const scrollContainer = appContent.querySelector('.circles-container');
-          if (scrollContainer) {
-            currentScrollTop = scrollContainer.scrollTop;
-          }
-        } else {
-          currentScrollTop = appContent.scrollTop;
-        }
+        const currentScrollTop = appContent.scrollTop;
 
         // 更新内容
         const newContent = this.getAppContent();
@@ -4676,14 +4661,7 @@ if (typeof window.MessageApp === 'undefined') {
         // 恢复滚动位置（如果需要的话）
         if (currentScrollTop > 0) {
           setTimeout(() => {
-            if (preserveScroll) {
-              const scrollContainer = appContent.querySelector('.circles-container');
-              if (scrollContainer) {
-                scrollContainer.scrollTop = currentScrollTop;
-              }
-            } else {
-              appContent.scrollTop = currentScrollTop;
-            }
+            appContent.scrollTop = currentScrollTop;
           }, 50);
         }
       } catch (error) {

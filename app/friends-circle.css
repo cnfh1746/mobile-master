@@ -1,126 +1,369 @@
-/* 选择工具栏样式 */
-.selection-toolbar {
-  position: sticky;
-  top: 0;
-  background: #fff;
-  padding: 10px 15px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+/* 朋友圈页面整体布局 */
+.friends-circle-page {
+  height: 100%;
+  overflow-y: auto;
+  background-color: #f0f2f5;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.selection-info {
-  display: flex;
-  align-items: center;
+.friends-circle-content {
+  padding-bottom: 60px; /* 为底部导航栏留出空间 */
 }
 
-.selection-count {
+/* 用户信息区域 */
+.user-info-section {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.user-cover {
+  height: 200px;
+  background-image: url('../images/p-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 15px;
+}
+
+.user-avatar {
+  position: absolute;
+  bottom: -20px;
+  right: 20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  border: 3px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-details {
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.user-signature {
   font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-.selection-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.selection-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
+  margin-top: 5px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 5px;
+}
+
+.signature-edit-icon {
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.user-signature:hover .signature-edit-icon {
+  opacity: 1;
+}
+
+/* 朋友圈列表 */
+.circles-container {
+  padding: 0 10px;
+  margin-top: 30px; /* 为头像留出空间 */
+}
+
+.circle-item {
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.circle-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+}
+
+.friend-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-name {
+  font-weight: bold;
+  color: #586797;
+}
+
+.circle-time {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 朋友圈内容 */
+.circle-content {
+  margin-bottom: 10px;
+}
+
+.text-circle-content,
+.text-content {
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.visual-circle-content .text-content {
+  margin-bottom: 10px;
+}
+
+.circle-image-container {
+  margin-top: 10px;
+  max-width: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.circle-image {
+  max-width: 100%;
+  display: block;
+  cursor: zoom-in;
+  transition: transform 0.3s;
+}
+
+.image-placeholder {
+  background-color: #eee;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  color: #999;
+}
+
+.image-placeholder .fa-image {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+/* 操作栏 */
+.circle-actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+}
+
+.action-btn i {
+  margin-right: 5px;
+}
+
+.like-btn.liked i {
+  color: #ff6b9d;
+}
+
+/* 回复区域 */
+.replies-section {
+  background-color: #f7f7f7;
+  border-radius: 6px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.circle-reply {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.reply-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.reply-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reply-content {
+  flex-grow: 1;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.reply-author {
+  font-weight: bold;
+  color: #586797;
+  font-size: 14px;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: #aaa;
+  margin-left: 8px;
+}
+
+.reply-to-comment-btn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.reply-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 回复输入框 */
+.reply-input-container {
+  display: flex;
+  margin-top: 10px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+}
+
+.reply-input {
+  flex-grow: 1;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.reply-send-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* 空状态 */
+.empty-circles {
+  text-align: center;
+  padding: 50px 20px;
+  color: #999;
+}
+
+.empty-circles i {
+  font-size: 40px;
+  margin-bottom: 15px;
+}
+
+/* 选择和删除功能 */
+.friends-circle-selection-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.selection-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
   transition: all 0.3s;
 }
 
-.select-all-btn {
+.enter-selection-btn {
   background: #007bff;
   color: white;
 }
 
-.select-all-btn:hover {
-  background: #0056b3;
+.select-all-btn {
+  background: #28a745;
+  color: white;
 }
 
-.delete-btn {
+.delete-selected-btn {
   background: #dc3545;
   color: white;
 }
 
-.delete-btn:hover {
+.delete-selected-btn:disabled {
   background: #c82333;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.cancel-btn {
+.cancel-selection-btn {
   background: #6c757d;
   color: white;
+  margin-left: auto;
 }
 
-.cancel-btn:hover {
-  background: #545b62;
+.circle-item.selected {
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
 }
 
-/* 非选择模式的操作工具栏 */
-.action-toolbar {
-  padding: 10px 15px;
-  display: flex;
-  justify-content: flex-end;
+.item-checkbox {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 5;
 }
 
-.action-btn {
-  padding: 8px 16px;
-  border: 1px solid #007bff;
-  background: white;
-  color: #007bff;
-  border-radius: 20px;
-  font-size: 14px;
+.item-checkbox-input {
+  width: 22px;
+  height: 22px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s;
-}
-
-.action-btn:hover {
-  background: #007bff;
-  color: white;
-}
-
-/* 复选框容器 */
-.circle-checkbox-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-}
-
-.circle-checkbox {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #007bff;
-}
-
-/* 选择模式下的朋友圈项 */
-.circle-item.selection-mode {
-  background: #f8f9fa;
-  border-left: 3px solid transparent;
-  transition: all 0.3s;
-}
-
-.circle-item.selection-mode .circle-checkbox:checked ~ * {
-  opacity: 0.7;
-}
-
-/* 朋友圈头部在选择模式下的调整 */
-.circle-item.selection-mode .circle-header {
-  display: flex;
-  align-items: center;
 }

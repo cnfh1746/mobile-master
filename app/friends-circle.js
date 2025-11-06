@@ -1145,11 +1145,13 @@ if (typeof window.FriendsCircle === 'undefined') {
     renderFriendsCirclePage() {
       const userInfo = this.renderUserInfo();
       const circlesList = this.renderCirclesList();
+      const selectionToolbar = this.renderSelectionToolbar();
 
       return `
         <div class="friends-circle-page">
           <div class="friends-circle-content">
             ${userInfo}
+            ${selectionToolbar}
             <div class="circles-container">
               ${circlesList}
             </div>
@@ -1200,54 +1202,19 @@ if (typeof window.FriendsCircle === 'undefined') {
         return '<div class="empty-circles"><i class="fas fa-heart"></i><span>暂无朋友圈</span></div>';
       }
 
-      // 同步批量获取基础信息
+      // 🌟 方案B：同步批量获取基础信息，避免重复调用
       try {
+        // 同步调用批量获取，如果缓存过期则更新
         this.friendsCircle.batchGetBasicInfo();
       } catch (error) {
         console.warn('[Friends Circle] 批量获取基础信息失败，使用降级处理:', error);
       }
 
-      // 只渲染前10条朋友圈
+      // 🌟 方案C：懒加载 - 只渲染前10条朋友圈
       const visibleCircles = circles.slice(0, 10);
       const remainingCount = circles.length - 10;
 
-      // 添加选择工具栏（仅在选择模式下显示）
-      let toolbarHtml = '';
-      if (this.friendsCircle.isSelectionMode) {
-        toolbarHtml = `
-          <div class="selection-toolbar">
-            <div class="selection-info">
-              <span class="selection-count">已选择 ${this.friendsCircle.selectedCircles.size} 条</span>
-            </div>
-            <div class="selection-actions">
-              <button class="selection-btn select-all-btn" onclick="window.friendsCircle?.toggleSelectAll()">
-                <i class="fas fa-check-square"></i>
-                全选
-              </button>
-              <button class="selection-btn delete-btn" onclick="window.friendsCircle?.deleteSelected()">
-                <i class="fas fa-trash"></i>
-                删除
-              </button>
-              <button class="selection-btn cancel-btn" onclick="window.friendsCircle?.exitSelectionMode()">
-                <i class="fas fa-times"></i>
-                取消
-              </button>
-            </div>
-          </div>
-        `;
-      } else {
-        // 非选择模式下显示进入选择模式的按钮
-        toolbarHtml = `
-          <div class="action-toolbar">
-            <button class="action-btn enter-selection-btn" onclick="window.friendsCircle?.enterSelectionMode()">
-              <i class="fas fa-check-square"></i>
-              选择删除
-            </button>
-          </div>
-        `;
-      }
-
-      let html = toolbarHtml + visibleCircles.map(circle => this.renderSingleCircle(circle)).join('');
+      let html = visibleCircles.map(circle => this.renderSingleCircle(circle)).join('');
 
       // 如果还有更多朋友圈，添加加载更多按钮
       if (remainingCount > 0) {
@@ -1271,14 +1238,16 @@ if (typeof window.FriendsCircle === 'undefined') {
      * @returns {string} 单个朋友圈HTML
      */
     renderSingleCircle(circle) {
-      // 获取头像等信息...
+      // 🌟 方案B：使用批量缓存的信息，避免重复调用
       let friendAvatar;
       const cache = this.friendsCircle.batchCache;
       const currentUserName = cache.userName || this.getCurrentUserName();
 
       if (circle.author === currentUserName || circle.friendId === '483920') {
+        // 用户自己的朋友圈，使用缓存的用户头像
         friendAvatar = cache.userAvatar || this.getCurrentUserAvatar();
       } else {
+        // 其他好友的朋友圈，使用缓存的好友头像
         friendAvatar = cache.friendAvatars.get(circle.friendId) || this.getFriendAvatar(circle.friendId);
       }
 
@@ -1286,23 +1255,22 @@ if (typeof window.FriendsCircle === 'undefined') {
       const contentHtml = this.renderCircleContent(circle);
       const repliesHtml = this.renderCircleReplies(circle.replies, circle.id);
       const actionsHtml = this.renderCircleActions(circle);
-
-      // 判断是否选中
       const isSelected = this.friendsCircle.selectedCircles.has(circle.id);
 
       return `
-        <div class="circle-item ${this.friendsCircle.isSelectionMode ? 'selection-mode' : ''}" 
-             data-circle-id="${circle.id}">
+        <div class="circle-item ${isSelected ? 'selected' : ''}" data-circle-id="${circle.id}">
+          ${
+            this.friendsCircle.isSelectionMode
+              ? `
+            <div class="item-checkbox">
+              <input type="checkbox" class="item-checkbox-input" data-circle-id="${circle.id}" ${
+                  isSelected ? 'checked' : ''
+                }>
+            </div>
+          `
+              : ''
+          }
           <div class="circle-header">
-            ${this.friendsCircle.isSelectionMode ? `
-              <div class="circle-checkbox-container">
-                <input type="checkbox" 
-                       class="circle-checkbox" 
-                       data-circle-id="${circle.id}"
-                       ${isSelected ? 'checked' : ''}
-                       onchange="window.friendsCircle?.toggleCircleSelection('${circle.id}')">
-              </div>
-            ` : ''}
             <div class="friend-avatar">
               <img src="${friendAvatar}" alt="${circle.author}" />
             </div>
@@ -2427,6 +2395,82 @@ if (typeof window.FriendsCircle === 'undefined') {
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
+
+    renderSelectionToolbar() {
+      if (!this.friendsCircle.isSelectionMode) {
+        return `
+            <div class="friends-circle-selection-toolbar">
+                <button class="selection-btn enter-selection-btn" id="enterCircleSelectionBtn">选择朋友圈</button>
+            </div>
+        `;
+      }
+
+      const selectedCount = this.friendsCircle.selectedCircles.size;
+      const allCircles = this.friendsCircle.manager.getSortedFriendsCircles();
+      const allVisibleCircles = allCircles.slice(0, document.querySelectorAll('.circle-item').length);
+      const isAllSelected = selectedCount === allVisibleCircles.length && allVisibleCircles.length > 0;
+
+      return `
+        <div class="friends-circle-selection-toolbar">
+            <button class="selection-btn select-all-btn" id="selectAllCirclesBtn">${
+              isAllSelected ? '取消全选' : '全选'
+            }</button>
+            <button class="selection-btn delete-selected-btn" id="deleteSelectedCirclesBtn" ${
+              selectedCount === 0 ? 'disabled' : ''
+            }>删除选中 (${selectedCount})</button>
+            <button class="selection-btn cancel-selection-btn" id="cancelCircleSelectionBtn">取消</button>
+        </div>
+    `;
+    }
+
+    bindEvents() {
+      // Enter selection mode
+      const enterBtn = document.getElementById('enterCircleSelectionBtn');
+      if (enterBtn) {
+        enterBtn.addEventListener('click', () => this.friendsCircle.enterSelectionMode());
+      }
+
+      // Exit selection mode
+      const cancelBtn = document.getElementById('cancelCircleSelectionBtn');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => this.friendsCircle.exitSelectionMode());
+      }
+
+      // Select all
+      const selectAllBtn = document.getElementById('selectAllCirclesBtn');
+      if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => this.friendsCircle.toggleSelectAll());
+      }
+
+      // Delete selected
+      const deleteBtn = document.getElementById('deleteSelectedCirclesBtn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => this.friendsCircle.deleteSelected());
+      }
+
+      // Item selection (checkbox and card)
+      document.querySelectorAll('.circle-item').forEach(item => {
+        if (this.friendsCircle.isSelectionMode) {
+          item.addEventListener('click', e => {
+            if (e.target.closest('.action-btn, .reply-input-container, .circle-image, a')) {
+              return;
+            }
+            if (e.target.classList.contains('item-checkbox-input')) {
+              return; // Checkbox has its own change event
+            }
+            const circleId = item.dataset.circleId;
+            this.friendsCircle.toggleCircleSelection(circleId);
+          });
+        }
+      });
+
+      document.querySelectorAll('.item-checkbox-input').forEach(checkbox => {
+        checkbox.addEventListener('change', e => {
+          const circleId = e.target.dataset.circleId;
+          this.friendsCircle.toggleCircleSelection(circleId);
+        });
+      });
+    }
   }
 
   /**
@@ -2450,10 +2494,6 @@ if (typeof window.FriendsCircle === 'undefined') {
       };
       this.userSignature = localStorage.getItem('friendsCircle_userSignature') || '这个人很懒，什么都没留下';
 
-      // 选择和删除相关属性
-      this.selectedCircles = new Set(); // 选中的朋友圈ID集合
-      this.isSelectionMode = false; // 是否处于选择模式
-
       // 初始化AttachmentSender用于图片上传
       this.initializeAttachmentSender();
 
@@ -2461,366 +2501,12 @@ if (typeof window.FriendsCircle === 'undefined') {
       this.selectedImageFile = null;
       this.selectedImageElements = null;
 
+      // 选择和删除相关属性
+      this.selectedCircles = new Set(); // 选中的朋友圈ID集合
+      this.isSelectionMode = false; // 是否处于选择模式
+
       console.log('[Friends Circle] 朋友圈功能初始化完成');
     }
-
-/**
- * 进入选择模式
- */
-enterSelectionMode() {
-  this.isSelectionMode = true;
-  this.selectedCircles.clear();
-  this.updateHeader();
-  this.dispatchUpdateEvent();
-  console.log('[Friends Circle] 进入选择模式');
-}
-
-/**
- * 退出选择模式
- */
-exitSelectionMode() {
-  this.isSelectionMode = false;
-  this.selectedCircles.clear();
-  this.updateHeader();
-  this.dispatchUpdateEvent();
-  console.log('[Friends Circle] 退出选择模式');
-}
-
-/**
- * 切换单个朋友圈的选择状态
- * @param {string} circleId - 朋友圈ID
- */
-toggleCircleSelection(circleId) {
-  if (this.selectedCircles.has(circleId)) {
-    this.selectedCircles.delete(circleId);
-  } else {
-    this.selectedCircles.add(circleId);
-  }
-  
-  // 直接更新DOM复选框状态，避免重新渲染整个页面
-  const checkbox = document.querySelector(`.circle-checkbox[data-circle-id="${circleId}"]`);
-  if (checkbox) {
-    checkbox.checked = this.selectedCircles.has(circleId);
-  }
-  
-  // 更新选择计数显示
-  this.updateSelectionCount();
-}
-
-/**
- * 全选/取消全选
- */
-toggleSelectAll() {
-  const allCircles = this.manager.getSortedFriendsCircles();
-  
-  if (this.selectedCircles.size === allCircles.length) {
-    // 当前已全选，执行取消全选
-    this.selectedCircles.clear();
-  } else {
-    // 执行全选
-    allCircles.forEach(circle => this.selectedCircles.add(circle.id));
-  }
-  
-  // 更新所有复选框状态
-  document.querySelectorAll('.circle-checkbox').forEach(checkbox => {
-    const circleId = checkbox.dataset.circleId;
-    checkbox.checked = this.selectedCircles.has(circleId);
-  });
-  
-  this.updateSelectionCount();
-}
-
-/**
- * 更新选择计数显示
- */
-updateSelectionCount() {
-  const countElement = document.querySelector('.selection-count');
-  if (countElement) {
-    countElement.textContent = `已选择 ${this.selectedCircles.size} 条`;
-  }
-}
-
-/**
- * 删除选中的朋友圈（添加永久删除逻辑）
- */
-async deleteSelected() {
-  if (this.selectedCircles.size === 0) {
-    this.showToast('请先选择要删除的朋友圈', 'warning');
-    return;
-  }
-  
-  const count = this.selectedCircles.size;
-  
-  if (!confirm(`确定要永久删除 ${count} 条朋友圈吗？此操作不可恢复。`)) {
-    return;
-  }
-  
-  try {
-    // 保存当前滚动位置
-    const contentElement = document.querySelector('.friends-circle-content');
-    const scrollPos = contentElement ? contentElement.scrollTop : 0;
-    
-    // ⭐ 添加：从上下文中永久删除
-    await this.deleteCirclesFromContext(Array.from(this.selectedCircles));
-    
-    // 从内存中删除
-    this.selectedCircles.forEach(circleId => {
-      this.manager.friendsCircleData.delete(circleId);
-      console.log(`[Friends Circle] 删除朋友圈: ${circleId}`);
-    });
-    
-    // ⭐ 添加：保存聊天数据
-    await this.saveChatData();
-    
-    // 退出选择模式
-    this.exitSelectionMode();
-    
-    // 恢复滚动位置
-    setTimeout(() => {
-      const content = document.querySelector('.friends-circle-content');
-      if (content) {
-        content.scrollTop = scrollPos;
-      }
-    }, 100);
-    
-    this.showToast(`成功永久删除 ${count} 条朋友圈`, 'success');
-    
-  } catch (error) {
-    console.error('[Friends Circle] 删除失败:', error);
-    this.showToast('删除失败，请重试', 'error');
-  }
-}
-
-/**
- * 从上下文中删除朋友圈（永久删除）
- * @param {Array} circleIds - 要删除的朋友圈ID数组
- */
-async deleteCirclesFromContext(circleIds) {
-  try {
-    console.log('[Friends Circle] 从上下文中永久删除朋友圈');
-
-    // 获取当前聊天数据
-    const contextData = this.getChatData();
-    if (!contextData || contextData.length === 0) {
-      console.log('[Friends Circle] 没有找到聊天数据');
-      return;
-    }
-
-    // 获取要删除的朋友圈信息
-    const circlesToDelete = circleIds
-      .map(id => this.manager.friendsCircleData.get(id))
-      .filter(circle => circle);
-
-    let hasUpdated = false;
-
-    // 遍历所有消息，删除朋友圈标记
-    for (let i = 0; i < contextData.length; i++) {
-      const message = contextData[i];
-      const content = message.mes || message.content || '';
-
-      let updatedContent = content;
-      let messageModified = false;
-
-      // 对每个要删除的朋友圈进行处理
-      for (const circle of circlesToDelete) {
-        // 匹配文字朋友圈: [朋友圈|角色名|好友ID|w楼层ID|内容]
-        const textPattern = new RegExp(
-          `\\[朋友圈\\|${this.escapeRegex(circle.author)}\\|${this.escapeRegex(circle.friendId)}\\|${this.escapeRegex(circle.id)}\\|[^\\]]+\\]`,
-          'g'
-        );
-
-        // 匹配视觉朋友圈（带文字）: [朋友圈|角色名|好友ID|s楼层ID|图片描述|文字内容]
-        const visualWithTextPattern = new RegExp(
-          `\\[朋友圈\\|${this.escapeRegex(circle.author)}\\|${this.escapeRegex(circle.friendId)}\\|${this.escapeRegex(circle.id)}\\|[^\\|]+\\|[^\\]]+\\]`,
-          'g'
-        );
-
-        // 匹配视觉朋友圈（无文字）: [朋友圈|角色名|好友ID|s楼层ID|图片描述]
-        const visualNoTextPattern = new RegExp(
-          `\\[朋友圈\\|${this.escapeRegex(circle.author)}\\|${this.escapeRegex(circle.friendId)}\\|${this.escapeRegex(circle.id)}\\|[^\\]]+\\]`,
-          'g'
-        );
-
-        // 匹配回复: [朋友圈回复|角色名|好友ID|楼层ID|回复内容]
-        const replyPattern = new RegExp(
-          `\\[朋友圈回复\\|[^\\|]+\\|[^\\|]+\\|${this.escapeRegex(circle.id)}\\|[^\\]]+\\]`,
-          'g'
-        );
-
-        // 检查并替换匹配的模式
-        if (textPattern.test(updatedContent)) {
-          updatedContent = updatedContent.replace(textPattern, match => {
-            return `[已删除|朋友圈|${circle.id}]`;
-          });
-          messageModified = true;
-        }
-
-        // 重置lastIndex
-        visualWithTextPattern.lastIndex = 0;
-        visualNoTextPattern.lastIndex = 0;
-
-        if (visualWithTextPattern.test(updatedContent)) {
-          updatedContent = updatedContent.replace(visualWithTextPattern, match => {
-            return `[已删除|朋友圈|${circle.id}]`;
-          });
-          messageModified = true;
-        } else if (visualNoTextPattern.test(updatedContent)) {
-          updatedContent = updatedContent.replace(visualNoTextPattern, match => {
-            return `[已删除|朋友圈|${circle.id}]`;
-          });
-          messageModified = true;
-        }
-
-        // 删除相关回复
-        if (replyPattern.test(updatedContent)) {
-          updatedContent = updatedContent.replace(replyPattern, match => {
-            return `[已删除|朋友圈回复|${circle.id}]`;
-          });
-          messageModified = true;
-        }
-      }
-
-      // 如果消息被修改，更新它
-      if (messageModified) {
-        const success = await this.updateMessageContent(i, updatedContent);
-        if (success) {
-          hasUpdated = true;
-          console.log(`[Friends Circle] 已更新消息 ${i}`);
-        }
-      }
-    }
-
-    if (hasUpdated) {
-      // 保存聊天数据
-      await this.saveChatData();
-      console.log('[Friends Circle] 朋友圈删除完成并已保存');
-    } else {
-      console.log('[Friends Circle] 没有找到需要删除的朋友圈');
-    }
-  } catch (error) {
-    console.error('[Friends Circle] 删除朋友圈失败:', error);
-    throw error;
-  }
-}
-
-/**
- * 转义正则表达式特殊字符
- */
-escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * 更新消息内容
- */
-async updateMessageContent(messageIndex, newContent) {
-  try {
-    console.log(`[Friends Circle] 正在更新消息 ${messageIndex}`);
-
-    // 方法1: 使用全局chat数组直接更新
-    const chat = window['chat'];
-    if (chat && Array.isArray(chat) && chat[messageIndex]) {
-      chat[messageIndex].mes = newContent;
-
-      // 如果消息有swipes，也需要更新
-      if (chat[messageIndex].swipes && chat[messageIndex].swipe_id !== undefined) {
-        chat[messageIndex].swipes[chat[messageIndex].swipe_id] = newContent;
-      }
-
-      // 标记聊天数据已被修改
-      if (window.chat_metadata) {
-        window.chat_metadata.tainted = true;
-      }
-
-      console.log(`[Friends Circle] 已更新消息 ${messageIndex}`);
-      return true;
-    }
-
-    // 方法2: 尝试通过编辑器功能更新
-    if (window.mobileContextEditor && window.mobileContextEditor.modifyMessage) {
-      await window.mobileContextEditor.modifyMessage(messageIndex, newContent);
-      return true;
-    }
-
-    console.warn('[Friends Circle] 没有找到有效的消息更新方法');
-    return false;
-  } catch (error) {
-    console.error('[Friends Circle] 更新消息内容失败:', error);
-    return false;
-  }
-}
-
-/**
- * 保存聊天数据
- */
-async saveChatData() {
-  try {
-    console.log('[Friends Circle] 开始保存聊天数据...');
-
-    // 方法1: 使用SillyTavern的保存函数
-    if (typeof window.saveChatConditional === 'function') {
-      await window.saveChatConditional();
-      console.log('[Friends Circle] 已通过saveChatConditional保存聊天数据');
-      return true;
-    }
-
-    // 方法2: 使用延迟保存
-    if (typeof window.saveChatDebounced === 'function') {
-      window.saveChatDebounced();
-      console.log('[Friends Circle] 已通过saveChatDebounced保存聊天数据');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return true;
-    }
-
-    // 方法3: 使用编辑器的保存功能
-    if (window.mobileContextEditor && typeof window.mobileContextEditor.saveChatData === 'function') {
-      await window.mobileContextEditor.saveChatData();
-      console.log('[Friends Circle] 已通过mobileContextEditor保存聊天数据');
-      return true;
-    }
-
-    console.warn('[Friends Circle] 没有找到有效的保存方法');
-    return false;
-  } catch (error) {
-    console.error('[Friends Circle] 保存聊天数据失败:', error);
-    return false;
-  }
-}
-
-/**
- * 获取聊天数据
- */
-getChatData() {
-  try {
-    // 优先使用mobileContextEditor获取数据
-    const mobileContextEditor = window['mobileContextEditor'];
-    if (mobileContextEditor) {
-      const chatData = mobileContextEditor.getCurrentChatData();
-      if (chatData && chatData.messages && chatData.messages.length > 0) {
-        return chatData.messages;
-      }
-    }
-
-    // 尝试从全局变量获取
-    const chat = window['chat'];
-    if (chat && Array.isArray(chat)) {
-      return chat;
-    }
-
-    // 尝试从SillyTavern.getContext获取
-    if (window.SillyTavern?.getContext) {
-      const context = window.SillyTavern.getContext();
-      if (context?.chat && Array.isArray(context.chat)) {
-        return context.chat;
-      }
-    }
-
-    return [];
-  } catch (error) {
-    console.error('[Friends Circle] 获取聊天数据失败:', error);
-    return [];
-  }
-}
 
     /**
      * 🌟 方案B：批量获取基础信息
@@ -3024,24 +2710,18 @@ getChatData() {
     updateHeader() {
       console.log('[Friends Circle] 更新朋友圈header...');
 
+      // 通知主框架更新应用状态
       if (window.mobilePhone) {
         const friendsCircleState = {
           app: 'messages',
           view: 'friendsCircle',
-          title: this.isSelectionMode ? '选择朋友圈' : '朋友圈',
-          showBackButton: this.isSelectionMode,
-          backButtonAction: () => {
-            if (this.isSelectionMode) {
-              this.exitSelectionMode();
-            }
-          },
+          title: '朋友圈',
+          showBackButton: false,
           showAddButton: true,
-          addButtonIcon: this.isSelectionMode ? 'fas fa-check-square' : 'fas fa-plus',
+          addButtonIcon: 'fas fa-plus',
           addButtonAction: () => {
-            if (this.isSelectionMode) {
-              this.toggleSelectAll();
-            } else {
-              this.showPublishModal();
+            if (window.friendsCircle) {
+              window.friendsCircle.showPublishModal();
             }
           },
         };
@@ -4043,11 +3723,12 @@ getChatData() {
     /**
      * 派发更新事件
      */
-    dispatchUpdateEvent() {
+    dispatchUpdateEvent(preserveScroll = false) {
       const event = new CustomEvent('friendsCircleUpdate', {
         detail: {
           timestamp: Date.now(),
           circles: this.manager.getSortedFriendsCircles(),
+          preserveScroll: preserveScroll,
         },
       });
       window.dispatchEvent(event);
@@ -4607,6 +4288,182 @@ getChatData() {
         console.log(`[Friends Circle Debug] ${modalType}弹窗修复完成`);
       });
     }
+
+    // --- 选择和删除功能 ---
+
+    enterSelectionMode() {
+      console.log('[Friends Circle] 进入选择模式');
+      this.isSelectionMode = true;
+      this.selectedCircles.clear();
+      this.dispatchUpdateEvent();
+    }
+
+    exitSelectionMode() {
+      console.log('[Friends Circle] 退出选择模式');
+      this.isSelectionMode = false;
+      this.selectedCircles.clear();
+      this.dispatchUpdateEvent();
+    }
+
+    toggleCircleSelection(circleId) {
+      if (this.selectedCircles.has(circleId)) {
+        this.selectedCircles.delete(circleId);
+      } else {
+        this.selectedCircles.add(circleId);
+      }
+      this.dispatchUpdateEvent(true); // 保持滚动位置
+    }
+
+    toggleSelectAll() {
+      const allCircles = this.manager.getSortedFriendsCircles();
+      const allVisibleCircles = allCircles.slice(0, document.querySelectorAll('.circle-item').length);
+      const allSelected = this.selectedCircles.size === allVisibleCircles.length && allVisibleCircles.length > 0;
+
+      if (allSelected) {
+        this.selectedCircles.clear();
+      } else {
+        allVisibleCircles.forEach(circle => {
+          this.selectedCircles.add(circle.id);
+        });
+      }
+      this.dispatchUpdateEvent(true); // 保持滚动位置
+    }
+
+    async deleteSelected() {
+      if (this.selectedCircles.size === 0) {
+        this.showToast('请先选择要删除的朋友圈', 'warning');
+        return;
+      }
+
+      const circleAuthors = Array.from(this.selectedCircles)
+        .map(id => {
+          const circle = this.manager.friendsCircleData.get(id);
+          return circle ? `${circle.author}的朋友圈` : '';
+        })
+        .filter(name => name)
+        .join('、');
+
+      if (!confirm(`确定要永久删除这 ${this.selectedCircles.size} 条朋友圈吗？\n${circleAuthors}`)) {
+        return;
+      }
+
+      try {
+        console.log('[Friends Circle] 开始删除选中的朋友圈:', Array.from(this.selectedCircles));
+        await this.deleteCirclesFromContext(Array.from(this.selectedCircles));
+        this.showToast(`已成功删除 ${this.selectedCircles.size} 条朋友圈`, 'success');
+        this.exitSelectionMode();
+        setTimeout(() => {
+          this.refreshFriendsCircle();
+        }, 500);
+      } catch (error) {
+        console.error('[Friends Circle] 删除朋友圈失败:', error);
+        this.showToast('删除朋友圈失败: ' + error.message, 'error');
+      }
+    }
+
+    async deleteCirclesFromContext(circleIds) {
+      try {
+        const chatData = this.getChatDataSync();
+        if (!chatData || chatData.length === 0) {
+          throw new Error('没有找到聊天数据');
+        }
+
+        const circlesToDelete = circleIds.map(id => this.manager.friendsCircleData.get(id)).filter(Boolean);
+        let hasUpdated = false;
+
+        for (let i = 0; i < chatData.length; i++) {
+          let content = chatData[i].mes || '';
+          let messageModified = false;
+
+          for (const circle of circlesToDelete) {
+            const patterns = [
+              new RegExp(`\\[朋友圈\\|${this.escapeRegex(circle.author)}\\|[^|]+\\|${circle.id}\\|[^\\]]+\\]`, 'g'),
+              new RegExp(`\\[朋友圈\\|${this.escapeRegex(circle.author)}\\|[^|]+\\|${circle.id}\\|[^|]+\\|[^\\]]+\\]`, 'g'),
+            ];
+
+            for (const pattern of patterns) {
+              if (pattern.test(content)) {
+                content = content.replace(pattern, '[一条被删除的朋友圈]');
+                messageModified = true;
+              }
+            }
+
+            const replyPattern = new RegExp(`\\[朋友圈回复\\|[^|]+\\|[^|]+\\|${circle.id}\\|[^\\]]+\\]`, 'g');
+            if (replyPattern.test(content)) {
+              content = content.replace(replyPattern, '');
+              messageModified = true;
+            }
+          }
+
+          if (messageModified) {
+            const success = await this.updateMessageContent(i, content);
+            if (success) hasUpdated = true;
+          }
+        }
+
+        if (hasUpdated) {
+          await this.saveChatData();
+          console.log('[Friends Circle] 朋友圈删除完成并已保存');
+        }
+      } catch (error) {
+        console.error('[Friends Circle] 从上下文删除朋友圈失败:', error);
+        throw error;
+      }
+    }
+
+    escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    getChatDataSync() {
+      try {
+        if (window.SillyTavern?.getContext) {
+          const context = window.SillyTavern.getContext();
+          if (context?.chat) return context.chat;
+        }
+        if (window.chat) return window.chat;
+        return [];
+      } catch (error) {
+        console.error('[Friends Circle] 同步获取聊天数据失败:', error);
+        return [];
+      }
+    }
+
+    async updateMessageContent(messageIndex, newContent) {
+      try {
+        const chat = window.chat;
+        if (chat && chat[messageIndex]) {
+          chat[messageIndex].mes = newContent;
+          if (chat[messageIndex].swipes && chat[messageIndex].swipe_id !== undefined) {
+            chat[messageIndex].swipes[chat[messageIndex].swipe_id] = newContent;
+          }
+          if (window.chat_metadata) window.chat_metadata.tainted = true;
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('[Friends Circle] 更新消息内容失败:', error);
+        return false;
+      }
+    }
+
+    async saveChatData() {
+      try {
+        if (typeof window.saveChatConditional === 'function') {
+          await window.saveChatConditional();
+          return true;
+        }
+        if (typeof window.saveChatDebounced === 'function') {
+          window.saveChatDebounced();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('[Friends Circle] 保存聊天数据失败:', error);
+        return false;
+      }
+    }
   }
 
   // 导出类到全局
@@ -4614,6 +4471,12 @@ getChatData() {
   window.FriendsCircleEventListener = FriendsCircleEventListener;
   window.FriendsCircleRenderer = FriendsCircleRenderer;
   window.FriendsCircle = FriendsCircle;
+
+  window.bindFriendsCircleEvents = function () {
+    if (window.friendsCircle && window.friendsCircle.renderer) {
+      window.friendsCircle.renderer.bindEvents();
+    }
+  };
 
   console.log('[Friends Circle] 朋友圈模块加载完成');
 }

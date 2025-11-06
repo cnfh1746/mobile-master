@@ -7,17 +7,17 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.friends-circle-content {
+.friends-circle-page .friends-circle-content {
   padding-bottom: 60px; /* 为底部导航栏留出空间 */
 }
 
 /* 用户信息区域 */
-.user-info-section {
+.friends-circle-page .user-info-section {
   position: relative;
   margin-bottom: 10px;
 }
 
-.user-cover {
+.friends-circle-page .user-cover {
   height: 200px;
   background-image: url('../images/p-bg.jpg');
   background-size: cover;
@@ -28,7 +28,7 @@
   padding: 15px;
 }
 
-.user-avatar {
+.friends-circle-page .user-avatar {
   position: absolute;
   bottom: -20px;
   right: 20px;
@@ -40,13 +40,13 @@
   overflow: hidden;
 }
 
-.user-avatar img {
+.friends-circle-page .user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.user-details {
+.friends-circle-page .user-details {
   position: absolute;
   bottom: 10px;
   left: 15px;
@@ -54,12 +54,12 @@
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.user-name {
+.friends-circle-page .user-name {
   font-size: 20px;
   font-weight: bold;
 }
 
-.user-signature {
+.friends-circle-page .user-signature {
   font-size: 14px;
   margin-top: 5px;
   cursor: pointer;
@@ -67,23 +67,23 @@
   align-items: center;
 }
 
-.signature-edit-icon {
+.friends-circle-page .signature-edit-icon {
   margin-left: 8px;
   opacity: 0.7;
   transition: opacity 0.3s;
 }
 
-.user-signature:hover .signature-edit-icon {
+.friends-circle-page .user-signature:hover .signature-edit-icon {
   opacity: 1;
 }
 
 /* 朋友圈列表 */
-.circles-container {
+.friends-circle-page .circles-container {
   padding: 0 10px;
   margin-top: 30px; /* 为头像留出空间 */
 }
 
-.circle-item {
+.friends-circle-page .circle-item {
   background-color: white;
   border-radius: 8px;
   margin-bottom: 15px;
@@ -92,13 +92,13 @@
   position: relative;
 }
 
-.circle-header {
+.friends-circle-page .circle-header {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.friend-avatar {
+.friends-circle-page .friend-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -106,59 +106,59 @@
   margin-right: 10px;
 }
 
-.friend-avatar img {
+.friends-circle-page .friend-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.friend-info {
+.friends-circle-page .friend-info {
   display: flex;
   flex-direction: column;
 }
 
-.friend-name {
+.friends-circle-page .friend-name {
   font-weight: bold;
   color: #586797;
 }
 
-.circle-time {
+.friends-circle-page .circle-time {
   font-size: 12px;
   color: #999;
 }
 
 /* 朋友圈内容 */
-.circle-content {
+.friends-circle-page .circle-content {
   margin-bottom: 10px;
 }
 
-.text-circle-content,
-.text-content {
+.friends-circle-page .text-circle-content,
+.friends-circle-page .text-content {
   font-size: 15px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
 
-.visual-circle-content .text-content {
+.friends-circle-page .visual-circle-content .text-content {
   margin-bottom: 10px;
 }
 
-.circle-image-container {
+.friends-circle-page .circle-image-container {
   margin-top: 10px;
   max-width: 200px;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.circle-image {
+.friends-circle-page .circle-image {
   max-width: 100%;
   display: block;
   cursor: zoom-in;
   transition: transform 0.3s;
 }
 
-.image-placeholder {
+.friends-circle-page .image-placeholder {
   background-color: #eee;
   padding: 20px;
   border-radius: 8px;
@@ -166,20 +166,20 @@
   color: #999;
 }
 
-.image-placeholder .fa-image {
+.friends-circle-page .image-placeholder .fa-image {
   font-size: 30px;
   margin-bottom: 10px;
 }
 
 /* 操作栏 */
-.circle-actions {
+.friends-circle-page .circle-actions {
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid #f0f0f0;
   padding-top: 10px;
 }
 
-.action-btn {
+.friends-circle-page .action-btn {
   background: none;
   border: none;
   color: #666;
@@ -190,28 +190,28 @@
   margin-left: 20px;
 }
 
-.action-btn i {
+.friends-circle-page .action-btn i {
   margin-right: 5px;
 }
 
-.like-btn.liked i {
+.friends-circle-page .like-btn.liked i {
   color: #ff6b9d;
 }
 
 /* 回复区域 */
-.replies-section {
+.friends-circle-page .replies-section {
   background-color: #f7f7f7;
   border-radius: 6px;
   margin-top: 10px;
   padding: 10px;
 }
 
-.circle-reply {
+.friends-circle-page .circle-reply {
   display: flex;
   margin-bottom: 8px;
 }
 
-.reply-avatar {
+.friends-circle-page .reply-avatar {
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -220,35 +220,35 @@
   flex-shrink: 0;
 }
 
-.reply-avatar img {
+.friends-circle-page .reply-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.reply-content {
+.friends-circle-page .reply-content {
   flex-grow: 1;
 }
 
-.reply-header {
+.friends-circle-page .reply-header {
   display: flex;
   align-items: center;
   margin-bottom: 3px;
 }
 
-.reply-author {
+.friends-circle-page .reply-author {
   font-weight: bold;
   color: #586797;
   font-size: 14px;
 }
 
-.reply-time {
+.friends-circle-page .reply-time {
   font-size: 11px;
   color: #aaa;
   margin-left: 8px;
 }
 
-.reply-to-comment-btn {
+.friends-circle-page .reply-to-comment-btn {
   background: none;
   border: none;
   color: #999;
@@ -257,20 +257,20 @@
   font-size: 12px;
 }
 
-.reply-text {
+.friends-circle-page .reply-text {
   font-size: 14px;
   line-height: 1.5;
 }
 
 /* 回复输入框 */
-.reply-input-container {
+.friends-circle-page .reply-input-container {
   display: flex;
   margin-top: 10px;
   border-top: 1px solid #f0f0f0;
   padding-top: 10px;
 }
 
-.reply-input {
+.friends-circle-page .reply-input {
   flex-grow: 1;
   border: 1px solid #ddd;
   border-radius: 15px;
@@ -278,7 +278,7 @@
   font-size: 14px;
 }
 
-.reply-send-btn {
+.friends-circle-page .reply-send-btn {
   background: #007bff;
   color: white;
   border: none;
@@ -290,19 +290,19 @@
 }
 
 /* 空状态 */
-.empty-circles {
+.friends-circle-page .empty-circles {
   text-align: center;
   padding: 50px 20px;
   color: #999;
 }
 
-.empty-circles i {
+.friends-circle-page .empty-circles i {
   font-size: 40px;
   margin-bottom: 15px;
 }
 
 /* 选择和删除功能 */
-.friends-circle-selection-toolbar {
+.friends-circle-page .friends-circle-selection-toolbar {
   display: flex;
   gap: 10px;
   padding: 10px 15px;
@@ -313,7 +313,7 @@
   z-index: 100;
 }
 
-.selection-btn {
+.friends-circle-page .selection-btn {
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
@@ -322,47 +322,47 @@
   transition: all 0.3s;
 }
 
-.enter-selection-btn {
+.friends-circle-page .enter-selection-btn {
   background: #007bff;
   color: white;
 }
 
-.select-all-btn {
+.friends-circle-page .select-all-btn {
   background: #28a745;
   color: white;
 }
 
-.delete-selected-btn {
+.friends-circle-page .delete-selected-btn {
   background: #dc3545;
   color: white;
 }
 
-.delete-selected-btn:disabled {
+.friends-circle-page .delete-selected-btn:disabled {
   background: #c82333;
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.cancel-selection-btn {
+.friends-circle-page .cancel-selection-btn {
   background: #6c757d;
   color: white;
   margin-left: auto;
 }
 
-.circle-item.selected {
+.friends-circle-page .circle-item.selected {
   background-color: #e3f2fd;
   border: 1px solid #90caf9;
   box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
 }
 
-.item-checkbox {
+.friends-circle-page .item-checkbox {
   position: absolute;
   top: 15px;
   right: 15px;
   z-index: 5;
 }
 
-.item-checkbox-input {
+.friends-circle-page .item-checkbox-input {
   width: 22px;
   height: 22px;
   cursor: pointer;

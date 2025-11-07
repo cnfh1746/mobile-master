@@ -671,6 +671,55 @@ if (typeof window.FriendsCircle === 'undefined') {
     }
 
     /**
+     * 删除最旧的N条朋友圈
+     * @param {number} count - 要删除的数量，默认30条
+     * @returns {number} 实际删除的数量
+     */
+    deleteOldestCircles(count = 30) {
+      try {
+        console.log(`[Friends Circle] 准备删除最旧的 ${count} 条朋友圈...`);
+        
+        // 获取所有朋友圈并按messageIndex升序排序（最旧的在前）
+        const allCircles = Array.from(this.friendsCircleData.values());
+        const sortedCircles = allCircles.sort((a, b) => {
+          const indexA = a.messageIndex || 0;
+          const indexB = b.messageIndex || 0;
+          return indexA - indexB;
+        });
+        
+        console.log(`[Friends Circle] 当前总共有 ${sortedCircles.length} 条朋友圈`);
+        
+        // 确定实际要删除的数量
+        const actualDeleteCount = Math.min(count, sortedCircles.length);
+        
+        if (actualDeleteCount === 0) {
+          console.log('[Friends Circle] 没有朋友圈可以删除');
+          return 0;
+        }
+        
+        // 获取要删除的朋友圈
+        const circlesToDelete = sortedCircles.slice(0, actualDeleteCount);
+        
+        // 执行删除
+        let deletedCount = 0;
+        circlesToDelete.forEach(circle => {
+          if (this.friendsCircleData.has(circle.id)) {
+            this.friendsCircleData.delete(circle.id);
+            deletedCount++;
+            console.log(`[Friends Circle] 已删除朋友圈: ${circle.id} (作者: ${circle.author})`);
+          }
+        });
+        
+        console.log(`[Friends Circle] 成功删除 ${deletedCount} 条朋友圈，剩余 ${this.friendsCircleData.size} 条`);
+        
+        return deletedCount;
+      } catch (error) {
+        console.error('[Friends Circle] 删除朋友圈失败:', error);
+        return 0;
+      }
+    }
+
+    /**
      * 更新朋友圈数据（支持增量更新）
      * @param {Map} newCircles - 新的朋友圈数据
      * @param {boolean} isIncremental - 是否为增量更新
@@ -3980,6 +4029,21 @@ if (typeof window.FriendsCircle === 'undefined') {
       });
 
       console.log('=== 数据持久性验证完成 ===');
+    }
+
+    /**
+     * 删除最旧的朋友圈(暴露给外部调用)
+     * @param {number} count - 要删除的数量
+     */
+    deleteOldCircles(count = 30) {
+        const deletedCount = this.manager.deleteOldestCircles(count);
+        
+        // 更新界面
+        if (this.isActive) {
+            this.dispatchUpdateEvent();
+        }
+        
+        return deletedCount;
     }
 
     /**

@@ -335,4 +335,29 @@ class MobilePhone {
     }
 
     // ... (rest of the file remains the same)
+
+    // 绑定事件
+    bindEvents() {
+        // ... (existing event bindings)
+
+        // 应用图标点击事件
+        document.querySelectorAll(".app-icon").forEach(icon => {
+            icon.addEventListener("click", e => {
+                const appName = e.currentTarget.getAttribute("data-app");
+
+                // 防抖：避免快速连续点击
+                if (this._lastAppIconClick && Date.now() - this._lastAppIconClick < 300) {
+                    console.log("[Mobile Phone] 防抖：应用图标点击过快，跳过:", appName);
+                    return;
+                }
+                this._lastAppIconClick = Date.now();
+
+                if (appName === 'delete-friends-circle') {
+                    this.handleDeleteFriendsCircle();
+                } else {
+                    this.openApp(appName);
+                }
+            });
+        });
+    }
 }

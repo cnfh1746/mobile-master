@@ -1174,7 +1174,12 @@ if (typeof window.FriendsCircle === 'undefined') {
               <img src="${userAvatar}" alt="${userName}" />
             </div>
             <div class="user-details">
-              <div class="user-name">${userName}</div>
+              <div class="user-name">
+                ${userName}
+                <button class="delete-old-circles-btn" onclick="window.friendsCircle?.deleteOldCircles()" title="删除旧的30条朋友圈">
+                  删
+                </button>
+              </div>
               <div class="user-signature" onclick="window.friendsCircle?.editUserSignature()">
                 <span class="signature-text">${userSignature}</span>
                 <i class="fas fa-edit signature-edit-icon"></i>
@@ -2729,13 +2734,70 @@ if (typeof window.FriendsCircle === 'undefined') {
     setUserSignature(signature) {
       this.userSignature = signature;
       localStorage.setItem('friendsCircle_userSignature', signature);
-      this.dispatchUpdateEvent();
-    }
+    this.dispatchUpdateEvent();
+  }
 
-    /**
-     * 编辑用户签名
-     */
-    editUserSignature() {
+  /**
+   * 删除最旧的30条朋友圈
+   */
+  deleteOldCircles() {
+    try {
+      console.log('[Friends Circle] 开始删除旧的朋友圈...');
+
+      // 获取所有朋友圈，按时间排序（最新的在前）
+      const circles = this.manager.getSortedFriendsCircles();
+
+      if (circles.length === 0) {
+        this.showToast('没有朋友圈可删除', 'info');
+        return;
+      }
+
+      // 确认删除
+      const confirmMsg =
+        circles.length <= 30
+          ? `确定要删除全部 ${circles.length} 条朋友圈吗？此操作不可恢复！`
+          : `确定要删除最旧的 30 条朋友圈吗？此操作不可恢复！`;
+
+      if (!confirm(confirmMsg)) {
+        console.log('[Friends Circle] 用户取消删除');
+        return;
+      }
+
+      // 计算要删除的朋友圈（从最旧的开始删除，即数组末尾）
+      const toDeleteCount = Math.min(30, circles.length);
+      const toDelete = circles.slice(-toDeleteCount); // 获取最后30条（最旧的）
+
+      console.log(
+        `[Friends Circle] 将删除 ${toDelete.length} 条朋友圈:`,
+        toDelete.map(c => ({ id: c.id, author: c.author })),
+      );
+
+      // 从管理器中删除这些朋友圈
+      let deletedCount = 0;
+      toDelete.forEach(circle => {
+        if (this.manager.friendsCircleData.has(circle.id)) {
+          this.manager.friendsCircleData.delete(circle.id);
+          deletedCount++;
+        }
+      });
+
+      console.log(`[Friends Circle] 成功删除 ${deletedCount} 条朋友圈`);
+
+      // 更新界面
+      this.dispatchUpdateEvent();
+
+      // 显示成功提示
+      this.showToast(`已删除 ${deletedCount} 条朋友圈`, 'success');
+    } catch (error) {
+      console.error('[Friends Circle] 删除朋友圈失败:', error);
+      this.showToast('删除失败，请重试', 'error');
+    }
+  }
+
+  /**
+   * 编辑用户签名
+   */
+  editUserSignature() {
       const newSignature = prompt('请输入新的个性签名:', this.userSignature);
       if (newSignature !== null && newSignature.trim() !== '') {
         this.setUserSignature(newSignature.trim());

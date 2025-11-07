@@ -650,7 +650,7 @@
 }
 
 /* 用户名区域调整 */
-.user-name {
+.friends-circle-page .user-name {
   display: flex;
   align-items: center;
   flex-wrap: wrap;

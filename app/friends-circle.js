@@ -13,6 +13,7 @@ if (typeof window.FriendsCircle === 'undefined') {
     constructor() {
       this.friendsCircleData = new Map(); // 存储朋友圈数据
       this.likesData = new Map(); // 存储点赞数据
+      this.deletedCircleIds = new Set(); // 🌟 新增：记录已删除的朋友圈ID
       this.lastProcessedMessageId = null;
       this.lastProcessedMessageIndex = -1; // 记录上次处理到的消息索引
 
@@ -96,7 +97,7 @@ if (typeof window.FriendsCircle === 'undefined') {
         const [, author, friendId, floorId, content] = match;
 
         // 验证内容是否合理（不包含表格格式或其他无关内容）
-        if (this.isValidCircleContent(content) && !circles.has(floorId)) {
+        if (this.isValidCircleContent(content) && !circles.has(floorId) && !this.deletedCircleIds.has(floorId)) {
           // 找到这条消息在聊天中的位置
           const messageIndex = this.findMessageIndex(messages, match[0], startIndex);
 
@@ -126,7 +127,7 @@ if (typeof window.FriendsCircle === 'undefined') {
         if (
           this.isValidCircleContent(imageDescription) &&
           this.isValidCircleContent(textContent) &&
-          !circles.has(floorId)
+          !circles.has(floorId) && !this.deletedCircleIds.has(floorId)
         ) {
           // 找到这条消息在聊天中的位置
           const messageIndex = this.findMessageIndex(messages, match[0], startIndex);
@@ -160,7 +161,7 @@ if (typeof window.FriendsCircle === 'undefined') {
         const [, author, friendId, floorId, imageDescription] = match;
 
         // 验证图片描述是否合理，且该楼层还未被处理
-        if (this.isValidCircleContent(imageDescription) && !circles.has(floorId)) {
+        if (this.isValidCircleContent(imageDescription) && !circles.has(floorId) && !this.deletedCircleIds.has(floorId)) {
           // 找到这条消息在聊天中的位置
           const messageIndex = this.findMessageIndex(messages, match[0], startIndex);
 
@@ -193,7 +194,7 @@ if (typeof window.FriendsCircle === 'undefined') {
         const [, author, friendId, floorId, fileName, textContent] = match;
 
         // 验证内容是否合理，且该楼层还未被处理
-        if (this.isValidCircleContent(textContent) && !circles.has(floorId)) {
+        if (this.isValidCircleContent(textContent) && !circles.has(floorId) && !this.deletedCircleIds.has(floorId)) {
           // 找到这条消息在聊天中的位置
           const messageIndex = this.findMessageIndex(messages, match[0], startIndex);
 
@@ -1164,23 +1165,27 @@ if (typeof window.FriendsCircle === 'undefined') {
      */
     renderUserInfo() {
       const userName = this.getCurrentUserName();
-      const userAvatar = this.getCurrentUserAvatar();
-      const userSignature = this.friendsCircle.getUserSignature();
-
+      const signature = this.friendsCircle.getUserSignature();
+      const avatarUrl = this.friendsCircle.renderer.getCurrentUserAvatar();
+      
       return `
         <div class="user-info-section">
           <div class="user-cover">
-            <div class="user-avatar">
-              <img src="${userAvatar}" alt="${userName}" />
-            </div>
+            <img src="${avatarUrl}" alt="用户头像" class="user-avatar">
             <div class="user-details">
               <div class="user-name">${userName}</div>
               <div class="user-signature" onclick="window.friendsCircle?.editUserSignature()">
-                <span class="signature-text">${userSignature}</span>
-                <i class="fas fa-edit signature-edit-icon"></i>
+                ${signature || '点击设置个性签名...'}
               </div>
             </div>
           </div>
+          
+          <!-- 🌟 删除按钮：绝对定位，不影响布局 -->
+          <button class="delete-old-circles-btn" 
+                  onclick="window.friendsCircle?.deleteOldCircles()" 
+                  title="删除旧的30条朋友圈">
+            删
+          </button>
         </div>
       `;
     }
@@ -2411,6 +2416,8 @@ if (typeof window.FriendsCircle === 'undefined') {
       this.selectedImageFile = null;
       this.selectedImageElements = null;
 
+      this.loadDeletedIds(); // 🌟 加载删除记录
+
       console.log('[Friends Circle] 朋友圈功能初始化完成');
     }
 
@@ -2739,6 +2746,85 @@ if (typeof window.FriendsCircle === 'undefined') {
       const newSignature = prompt('请输入新的个性签名:', this.userSignature);
       if (newSignature !== null && newSignature.trim() !== '') {
         this.setUserSignature(newSignature.trim());
+      }
+    }
+
+    /**
+     * 删除最旧的30条朋友圈（永久删除）
+     */
+    deleteOldCircles() {
+      try {
+        console.log('[Friends Circle] 开始删除旧的朋友圈...');
+        
+        const circles = this.manager.getSortedFriendsCircles();
+        
+        if (circles.length === 0) {
+          this.showToast('没有朋友圈可删除', 'info');
+          return;
+        }
+        
+        const confirmMsg = circles.length <= 30 
+          ? `确定要永久删除全部 ${circles.length} 条朋友圈吗？此操作不可恢复！`
+          : `确定要永久删除最旧的 30 条朋友圈吗？此操作不可恢复！`;
+        
+        if (!confirm(confirmMsg)) {
+          console.log('[Friends Circle] 用户取消删除');
+          return;
+        }
+        
+        const toDeleteCount = Math.min(30, circles.length);
+        const toDelete = circles.slice(-toDeleteCount);
+        
+        let deletedCount = 0;
+        toDelete.forEach(circle => {
+          if (this.manager.friendsCircleData.has(circle.id)) {
+            this.manager.friendsCircleData.delete(circle.id);
+            this.manager.deletedCircleIds.add(circle.id); // 🌟 记录删除ID
+            deletedCount++;
+          }
+        });
+        
+        // 🌟 保存删除记录到 localStorage
+        this.saveDeletedIds();
+        
+        console.log(`[Friends Circle] 成功永久删除 ${deletedCount} 条朋友圈`);
+        
+        this.dispatchUpdateEvent();
+        this.showToast(`已永久删除 ${deletedCount} 条朋友圈`, 'success');
+        
+      } catch (error) {
+        console.error('[Friends Circle] 删除失败:', error);
+        this.showToast('删除失败，请重试', 'error');
+      }
+    }
+
+    /**
+     * 保存删除记录
+     */
+    saveDeletedIds() {
+      try {
+        const deletedArray = Array.from(this.manager.deletedCircleIds);
+        localStorage.setItem('friendsCircle_deletedIds', JSON.stringify(deletedArray));
+        console.log(`[Friends Circle] 已保存 ${deletedArray.length} 条删除记录`);
+      } catch (error) {
+        console.error('[Friends Circle] 保存删除记录失败:', error);
+      }
+    }
+
+    /**
+     * 加载删除记录
+     */
+    loadDeletedIds() {
+      try {
+        const saved = localStorage.getItem('friendsCircle_deletedIds');
+        if (saved) {
+          const deletedArray = JSON.parse(saved);
+          this.manager.deletedCircleIds = new Set(deletedArray);
+          console.log(`[Friends Circle] 已加载 ${deletedArray.length} 条删除记录`);
+        }
+      } catch (error) {
+        console.error('[Friends Circle] 加载删除记录失败:', error);
+        this.manager.deletedCircleIds = new Set();
       }
     }
 

@@ -26,11 +26,36 @@
 
 /* 用户信息区域 */
 .user-info-section {
-  background: linear-gradient(135deg, #cec5c0 0%, #cebaab 100%);
-  color: #333;
-  padding: 15px;
-  margin-bottom: 8px;
   position: relative;
+}
+
+/* 删除按钮 - 绝对定位，不破坏布局 */
+.delete-old-circles-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.4);
+  z-index: 10;
+}
+
+.delete-old-circles-btn:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #d94452 100%);
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.5);
+  transform: translateY(-2px);
+}
+
+.delete-old-circles-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
 }
 
 .user-cover {

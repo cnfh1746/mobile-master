@@ -404,15 +404,11 @@ class MobilePhone {
                                         <!-- 第二页 -->
                                         <div class="app-page">
                                             <div class="app-grid">
-                                                <!-- 第一行：设置，删除朋友圈 -->
+                                                <!-- 第一行：相册，邮件，音乐 -->
                                                 <div class="app-row">
                                                     <div class="app-icon" data-app="settings">
                                                         <div class="app-icon-bg purple">⚙️</div>
                                                         <span class="app-label">设置</span>
-                                                    </div>
-                                                    <div class="app-icon" id="delete-old-moments-btn">
-                                                        <div class="app-icon-bg red">🗑️</div>
-                                                        <span class="app-label">删除旧朋友圈</span>
                                                     </div>
 
                                                 </div>
@@ -512,14 +508,6 @@ class MobilePhone {
                 this.openApp(appName);
             });
         });
-
-        // 删除旧朋友圈按钮事件
-        const deleteOldMomentsBtn = document.getElementById('delete-old-moments-btn');
-        if (deleteOldMomentsBtn) {
-            deleteOldMomentsBtn.addEventListener('click', () => {
-                this.deleteOldMoments();
-            });
-        }
     }
 
     // 处理返回按钮
@@ -7104,42 +7092,6 @@ class MobilePhone {
         // 示例判断逻辑：群聊ID可能包含特定字符或格式
         // 可以根据实际情况调整
         return friendId.includes('group') || friendId.includes('群') || friendId.length > 10;
-    }
-
-    // 删除旧朋友圈（删除最旧的30条）
-    deleteOldMoments() {
-        console.log('[Mobile Phone] 删除旧朋友圈按钮被点击');
-
-        try {
-            // 确认操作
-            if (!confirm('确定要永久删除最旧的30条朋友圈吗？此操作不可撤销！')) {
-                return;
-            }
-
-            // 检查朋友圈功能是否可用
-            if (!window.friendsCircle || !window.friendsCircle.deleteOldMoments) {
-                console.error('[Mobile Phone] 朋友圈删除功能未就绪');
-                MobilePhone.showToast('❌ 朋友圈功能未就绪', 'error');
-                return;
-            }
-
-            // 显示处理中提示
-            MobilePhone.showToast('🔄 正在删除旧朋友圈...', 'processing');
-
-            // 调用朋友圈的删除方法
-            const result = window.friendsCircle.deleteOldMoments(30);
-
-            if (result.success) {
-                MobilePhone.showToast(`✅ 成功删除 ${result.deletedCount} 条朋友圈`, 'success');
-                console.log('[Mobile Phone] 删除完成:', result);
-            } else {
-                MobilePhone.showToast('⚠️ ' + result.message, 'warning');
-                console.log('[Mobile Phone] 删除结果:', result);
-            }
-        } catch (error) {
-            console.error('[Mobile Phone] 删除朋友圈失败:', error);
-            MobilePhone.showToast('❌ 删除失败: ' + error.message, 'error');
-        }
     }
 }
 

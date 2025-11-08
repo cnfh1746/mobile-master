@@ -14,7 +14,6 @@ if (typeof window.FriendsCircle === 'undefined') {
       this.friendsCircleData = new Map(); // 存储朋友圈数据
       this.likesData = new Map(); // 存储点赞数据
       this.deletedCircleIds = new Set(); // 🌟 新增：记录已删除的朋友圈ID
-      this.circleTimestamps = new Map(); // 🌟 新增：存储朋友圈真实时间戳
       this.lastProcessedMessageId = null;
       this.lastProcessedMessageIndex = -1; // 记录上次处理到的消息索引
 
@@ -110,7 +109,6 @@ if (typeof window.FriendsCircle === 'undefined') {
             content: content,
             messageIndex: messageIndex,
             latestActivityIndex: messageIndex,
-            timestamp: this.getOrCreateTimestamp(floorId, messageIndex), // 🌟 新增
             replies: [],
             likes: this.getLikeCount(floorId),
             isLiked: this.isLiked(floorId),
@@ -148,7 +146,6 @@ if (typeof window.FriendsCircle === 'undefined') {
             content: textContent,
             messageIndex: messageIndex,
             latestActivityIndex: messageIndex,
-            timestamp: this.getOrCreateTimestamp(floorId, messageIndex), // 🌟 新增
             replies: [],
             likes: this.getLikeCount(floorId),
             isLiked: this.isLiked(floorId),
@@ -182,7 +179,6 @@ if (typeof window.FriendsCircle === 'undefined') {
             content: '', // 无文字内容
             messageIndex: messageIndex,
             latestActivityIndex: messageIndex,
-            timestamp: this.getOrCreateTimestamp(floorId, messageIndex), // 🌟 新增
             replies: [],
             likes: this.getLikeCount(floorId),
             isLiked: this.isLiked(floorId),
@@ -216,7 +212,6 @@ if (typeof window.FriendsCircle === 'undefined') {
             content: textContent,
             messageIndex: messageIndex,
             latestActivityIndex: messageIndex,
-            timestamp: this.getOrCreateTimestamp(floorId, messageIndex), // 🌟 新增
             replies: [],
             likes: this.getLikeCount(floorId),
             isLiked: this.isLiked(floorId),
@@ -261,24 +256,6 @@ if (typeof window.FriendsCircle === 'undefined') {
 
       console.log(`[Friends Circle] 解析到 ${circles.size} 条朋友圈`);
       return circles;
-    }
-
-    /**
-     * 获取或创建朋友圈时间戳
-     * @param {string} circleId - 朋友圈ID
-     * @param {number} messageIndex - 消息索引
-     * @returns {number} 时间戳
-     */
-    getOrCreateTimestamp(circleId, messageIndex) {
-      // 如果已有时间戳，直接返回
-      if (this.circleTimestamps.has(circleId)) {
-        return this.circleTimestamps.get(circleId);
-      }
-      
-      // 基于消息索引估算时间戳（假设每条消息间隔1分钟）
-      const estimatedTimestamp = Date.now() - (10000 - messageIndex) * 60000;
-      this.circleTimestamps.set(circleId, estimatedTimestamp);
-      return estimatedTimestamp;
     }
 
     /**
@@ -415,7 +392,6 @@ if (typeof window.FriendsCircle === 'undefined') {
               content: content,
               messageIndex: i,
               latestActivityIndex: i,
-              timestamp: this.getOrCreateTimestamp(floorId, i),
               replies: [],
               likes: this.getLikeCount(floorId),
               isLiked: this.isLiked(floorId),
@@ -445,7 +421,6 @@ if (typeof window.FriendsCircle === 'undefined') {
               content: textContent,
               messageIndex: i,
               latestActivityIndex: i,
-              timestamp: this.getOrCreateTimestamp(floorId, i),
               replies: [],
               likes: this.getLikeCount(floorId),
               isLiked: this.isLiked(floorId),
@@ -471,7 +446,6 @@ if (typeof window.FriendsCircle === 'undefined') {
               content: '',
               messageIndex: i,
               latestActivityIndex: i,
-              timestamp: this.getOrCreateTimestamp(floorId, i),
               replies: [],
               likes: this.getLikeCount(floorId),
               isLiked: this.isLiked(floorId),
@@ -497,7 +471,6 @@ if (typeof window.FriendsCircle === 'undefined') {
               content: textContent,
               messageIndex: i,
               latestActivityIndex: i,
-              timestamp: this.getOrCreateTimestamp(floorId, i),
               replies: [],
               likes: this.getLikeCount(floorId),
               isLiked: this.isLiked(floorId),
@@ -625,22 +598,27 @@ if (typeof window.FriendsCircle === 'undefined') {
     getSortedFriendsCircles() {
       const circles = Array.from(this.friendsCircleData.values());
 
-      // 🌟 新排序逻辑：优先使用时间戳，备用 latestActivityIndex
-      return circles.sort((a, b) => {
-        // 优先比较时间戳
-        const timestampA = a.timestamp || 0;
-        const timestampB = b.timestamp || 0;
-        
-        if (timestampA !== timestampB) {
-          return timestampB - timestampA; // 降序：新的在前
+      // 计算每个朋友圈的最新活动位置（包括回复位置）
+      const circlesWithActivity = circles.map(circle => {
+        let latestActivityIndex = circle.latestActivityIndex || circle.messageIndex || 0;
+
+        // 检查所有回复的位置，找到最新的
+        if (circle.replies && circle.replies.length > 0) {
+          circle.replies.forEach(reply => {
+            if (reply.messageIndex && reply.messageIndex > latestActivityIndex) {
+              latestActivityIndex = reply.messageIndex;
+            }
+          });
         }
-        
-        // 时间戳相同时，比较活动索引
-        const activityA = a.latestActivityIndex || a.messageIndex || 0;
-        const activityB = b.latestActivityIndex || b.messageIndex || 0;
-        
-        return activityB - activityA; // 降序：新的在前
+
+        return {
+          ...circle,
+          latestActivityIndex: latestActivityIndex,
+        };
       });
+
+      // 按最新活动位置降序排序（位置越大越新，排在前面）
+      return circlesWithActivity.sort((a, b) => b.latestActivityIndex - a.latestActivityIndex);
     }
 
     /**
@@ -3148,7 +3126,7 @@ if (typeof window.FriendsCircle === 'undefined') {
           replies: [],
           likes: 0,
           isLiked: false,
-          timestamp: Date.now(), // 🌟 使用当前时间戳
+          timestamp: new Date().toISOString(),
         };
 
         // 立即存储到管理器中
@@ -3470,7 +3448,7 @@ if (typeof window.FriendsCircle === 'undefined') {
           replies: [],
           likes: 0,
           isLiked: false,
-          timestamp: Date.now(), // 🌟 使用当前时间戳
+          timestamp: new Date().toISOString(),
         };
 
         // 立即存储到管理器中
